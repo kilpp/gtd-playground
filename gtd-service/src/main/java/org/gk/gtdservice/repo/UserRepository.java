@@ -2,7 +2,6 @@ package org.gk.gtdservice.repo;
 
 import org.gk.gtdservice.dto.CreateUserDto;
 import org.gk.gtdservice.model.User;
-import org.springframework.dao.DataAccessException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
@@ -27,15 +26,14 @@ public class UserRepository {
         this.jdbc = jdbc;
     }
 
-    private final RowMapper<User> mapper = (rs, _rowNum) -> {
-        return new User(
-                rs.getLong("id"),
-                rs.getString("username"),
-                rs.getString("email"),
-                rs.getString("name"),
-                rs.getTimestamp("created_at").toInstant()
-        );
-    };
+    private final RowMapper<User> mapper = (rs, _rowNum) ->
+            new User(
+                    rs.getLong("id"),
+                    rs.getString("username"),
+                    rs.getString("email"),
+                    rs.getString("name"),
+                    rs.getTimestamp("created_at").toInstant()
+            );
 
     public List<User> findAll() {
         return jdbc.query("SELECT id, username, email, name, created_at FROM users", Collections.emptyMap(), mapper);
@@ -67,13 +65,7 @@ public class UserRepository {
                 .addValue("email", dto.email())
                 .addValue("name", dto.name())
                 .addValue("created_at", Timestamp.from(Instant.now()));
-        try {
-            jdbc.update(sql, params, keyHolder);
-        } catch (DataIntegrityViolationException dive) {
-            throw dive;
-        } catch (DataAccessException dae) {
-            throw dae;
-        }
+        jdbc.update(sql, params, keyHolder);
         Number key = keyHolder.getKey();
         Long id = key != null ? key.longValue() : null;
         return findById(id).orElseThrow(() -> new RuntimeException("Failed to load created user"));
