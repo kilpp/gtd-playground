@@ -36,43 +36,43 @@ public class UserRepository {
             );
 
     public List<User> findAll() {
-        return jdbc.query("SELECT id, username, email, name, created_at FROM users", Collections.emptyMap(), mapper);
+        return jdbc.query("SELECT id, username, email, name, created_at FROM gtd.users", Collections.emptyMap(), mapper);
     }
 
     public Optional<User> findById(Long id) {
         Map<String, Object> params = Map.of("id", id);
-        List<User> l = jdbc.query("SELECT id, username, email, name, created_at FROM users WHERE id = :id", params, mapper);
+        List<User> l = jdbc.query("SELECT id, username, email, name, created_at FROM gtd.users WHERE id = :id", params, mapper);
         return l.stream().findFirst();
     }
 
     public Optional<User> findByUsername(String username) {
         Map<String, Object> params = Map.of("username", username);
-        List<User> l = jdbc.query("SELECT id, username, email, name, created_at FROM users WHERE username = :username", params, mapper);
+        List<User> l = jdbc.query("SELECT id, username, email, name, created_at FROM gtd.users WHERE username = :username", params, mapper);
         return l.stream().findFirst();
     }
 
     public Optional<User> findByEmail(String email) {
         Map<String, Object> params = Map.of("email", email);
-        List<User> l = jdbc.query("SELECT id, username, email, name, created_at FROM users WHERE email = :email", params, mapper);
+        List<User> l = jdbc.query("SELECT id, username, email, name, created_at FROM gtd.users WHERE email = :email", params, mapper);
         return l.stream().findFirst();
     }
 
     public User create(CreateUserDto dto) throws DataIntegrityViolationException {
-        String sql = "INSERT INTO users (username, email, name, created_at) VALUES (:username, :email, :name, :created_at)";
+        String sql = "INSERT INTO gtd.users (username, email, name, created_at) VALUES (:username, :email, :name, :created_at)";
         KeyHolder keyHolder = new GeneratedKeyHolder();
         MapSqlParameterSource params = new MapSqlParameterSource()
                 .addValue("username", dto.username())
                 .addValue("email", dto.email())
                 .addValue("name", dto.name())
                 .addValue("created_at", Timestamp.from(Instant.now()));
-        jdbc.update(sql, params, keyHolder);
+        jdbc.update(sql, params, keyHolder, new String[]{"id"});
         Number key = keyHolder.getKey();
         Long id = key != null ? key.longValue() : null;
         return findById(id).orElseThrow(() -> new RuntimeException("Failed to load created user"));
     }
 
     public User update(Long id, CreateUserDto dto) {
-        String sql = "UPDATE users SET username = :username, email = :email, name = :name WHERE id = :id";
+        String sql = "UPDATE gtd.users SET username = :username, email = :email, name = :name WHERE id = :id";
         MapSqlParameterSource params = new MapSqlParameterSource()
                 .addValue("username", dto.username())
                 .addValue("email", dto.email())
@@ -84,7 +84,7 @@ public class UserRepository {
     }
 
     public boolean delete(Long id) {
-        int updated = jdbc.update("DELETE FROM users WHERE id = :id", Map.of("id", id));
+        int updated = jdbc.update("DELETE FROM gtd.users WHERE id = :id", Map.of("id", id));
         return updated > 0;
     }
 }
