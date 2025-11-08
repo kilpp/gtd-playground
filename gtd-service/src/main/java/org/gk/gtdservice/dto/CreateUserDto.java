@@ -8,4 +8,5 @@ public record CreateUserDto(
         @NotBlank @Size(max = 50) String username,
         @NotBlank @Email @Size(max = 100) String email,
         @Size(max = 100) String name
-) {}
+) {
+}
