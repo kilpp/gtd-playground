@@ -10,7 +10,4 @@ public class GtdServiceApplication {
     void main() {
         SpringApplication.run(GtdServiceApplication.class);
     }
-
 }
-
-

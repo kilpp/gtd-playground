@@ -32,6 +32,13 @@ dependencies {
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
+// explicitly configure bootJar main class (helps Gradle resolve main when auto-detection fails)
+import org.springframework.boot.gradle.tasks.bundling.BootJar
+
+tasks.named('bootJar', BootJar) {
+    mainClass.set('org.gk.gtdservice.GtdServiceApplication')
+}
+
 tasks.named('test') {
     useJUnitPlatform()
 }
