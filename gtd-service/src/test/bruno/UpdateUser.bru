@@ -1,0 +1,30 @@
+meta {
+  name: Update User
+  type: http
+  seq: 4
+}
+
+http {
+  method: PUT
+  url: {{host}}/api/users/1
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+    "username": "bruno-updated",
+    "email": "bruno-updated@example.com",
+    "name": "Bruno Updated"
+}
+
+tests {
+  test("Status is 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+  test("Response has updated name", function() {
+    const data = res.getBody();
+    expect(data.name).to.equal("Bruno Updated");
+  });
+}

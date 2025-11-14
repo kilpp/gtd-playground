@@ -1,0 +1,20 @@
+meta {
+  name: Get Area
+  type: http
+  seq: 17
+}
+
+http {
+  method: GET
+  url: {{host}}/api/areas/1
+}
+
+tests {
+  test("Status is 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+  test("Response has name", function() {
+    const data = res.getBody();
+    expect(data.name).to.equal("Health");
+  });
+}

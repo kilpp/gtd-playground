@@ -1,0 +1,20 @@
+meta {
+  name: Get Context
+  type: http
+  seq: 10
+}
+
+http {
+  method: GET
+  url: {{host}}/api/contexts/1
+}
+
+tests {
+  test("Status is 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+  test("Response has name", function() {
+    const data = res.getBody();
+    expect(data.name).to.equal("@Home");
+  });
+}

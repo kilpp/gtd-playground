@@ -1,0 +1,32 @@
+meta {
+  name: Create Area
+  type: http
+  seq: 14
+}
+
+post {
+  url: {{host}}/api/areas
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body {
+    {
+        "userId": 3,
+        "name": "Health",
+        "description": "Health area"
+    }
+}
+
+tests {
+  test("Status is 201", function() {
+    expect(res.getStatus()).to.equal(201);
+  });
+  test("Response has id", function() {
+    const data = res.getBody();
+    expect(data.id).to.be.a('number');
+    bru.setVar("areaId", data.id);
+  });
+}

@@ -1,0 +1,32 @@
+meta {
+  name: Create User for Contexts
+  type: http
+  seq: 6
+}
+
+post {
+  url: {{host}}/api/users
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body {
+    {
+        "username": "ctx-user",
+        "email": "ctx@example.com",
+        "name": "Context User"
+    }
+}
+
+tests {
+  test("Status is 201", function() {
+    expect(res.getStatus()).to.equal(201);
+  });
+  test("Response has id", function() {
+    const data = res.getBody();
+    expect(data.id).to.be.a('number');
+    bru.setVar("contextUserId", data.id);
+  });
+}

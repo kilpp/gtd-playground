@@ -1,0 +1,32 @@
+meta {
+  name: Create User for Areas
+  type: http
+  seq: 13
+}
+
+post {
+  url: {{host}}/api/users
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body {
+    {
+        "username": "area-user",
+        "email": "area@example.com",
+        "name": "Area User"
+    }
+}
+
+tests {
+  test("Status is 201", function() {
+    expect(res.getStatus()).to.equal(201);
+  });
+  test("Response has id", function() {
+    const data = res.getBody();
+    expect(data.id).to.be.a('number');
+    bru.setVar("areaUserId", data.id);
+  });
+}

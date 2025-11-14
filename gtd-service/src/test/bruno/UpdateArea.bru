@@ -1,0 +1,24 @@
+http {
+  method: PUT
+  url: {{host}}/api/areas/1
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+    "userId": 3,
+    "name": "Health Updated",
+    "description": "Updated"
+}
+
+tests {
+  test("Status is 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+  test("Response has updated name", function() {
+    const data = res.getBody();
+    expect(data.name).to.equal("Health Updated");
+  });
+}

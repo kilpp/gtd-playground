@@ -1,0 +1,21 @@
+meta {
+  name: List Contexts
+  type: http
+  seq: 8
+}
+
+http {
+  method: GET
+  url: {{host}}/api/contexts
+}
+
+tests {
+  test("Status is 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+  test("Response is array", function() {
+    const data = res.getBody();
+    expect(data).to.be.an('array');
+    expect(data.length).to.be.at.least(1);
+  });
+}
