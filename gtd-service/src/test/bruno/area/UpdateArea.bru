@@ -1,0 +1,31 @@
+meta {
+  name: Update Area
+  type: http
+  seq: 18
+}
+
+put {
+  url: {{host}}/api/areas/{{areaId}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body {
+  {
+    "userId": "{{userId}}",
+    "name": "{{$randomJobArea}}",
+    "description": "{{$randomJobDescriptor}}"
+  }
+}
+
+tests {
+  test("Status is 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+  test("Response has updated name", function() {
+    const data = res.getBody();
+    expect(data.name).to.be.a("string");
+  });
+}

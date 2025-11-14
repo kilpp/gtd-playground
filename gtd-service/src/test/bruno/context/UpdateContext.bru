@@ -1,0 +1,33 @@
+meta {
+  name: Update Context
+  type: http
+  seq: 10
+}
+
+put {
+  url: {{host}}/api/contexts/{{contextId}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body { 
+  {
+    "userId": "{{userId}}",
+    "name": "{{$randomJobTitle}}",
+    "description": "{{$randomJobType}}",
+    "isLocation": "{{$randomBoolean}}" 
+  } 
+}
+
+tests {
+  test("Status is 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+  test("Response has updated name", function() {
+    const name = bru.getVar("contextName");
+    const data = res.getBody();
+    expect(data.name).to.not.equal(name);
+  });
+}

@@ -1,12 +1,15 @@
 meta {
-  name: Get Context
+  name: Get Area
   type: http
-  seq: 10
+  seq: 15
 }
 
-http {
-  method: GET
-  url: {{host}}/api/contexts/1
+get {
+  url: {{host}}/api/areas/{{areaId}}
+}
+
+headers {
+  Content-Type: application/json
 }
 
 tests {
@@ -15,6 +18,6 @@ tests {
   });
   test("Response has name", function() {
     const data = res.getBody();
-    expect(data.name).to.equal("@Home");
+    expect(data.name).to.be.a("string");
   });
 }

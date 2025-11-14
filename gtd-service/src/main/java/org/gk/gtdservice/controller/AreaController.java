@@ -58,6 +58,7 @@ public class AreaController {
 
     @PutMapping("/{id}")
     public AreaDto update(@PathVariable Long id, @Valid @RequestBody CreateAreaDto dto) {
+        IO.println("UPDATE AREA" + " ID=" + id + "DTO=" + dto);
         // ensure user exists
         if (userRepository.findById(dto.userId()).isEmpty()) {
             throw new ResourceNotFoundException("User not found");

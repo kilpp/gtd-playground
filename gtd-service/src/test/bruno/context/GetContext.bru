@@ -1,12 +1,11 @@
 meta {
-  name: Get Area
+  name: Get Context
   type: http
-  seq: 17
+  seq: 9
 }
 
-http {
-  method: GET
-  url: {{host}}/api/areas/1
+get {
+  url: {{host}}/api/contexts/{{contextId}}
 }
 
 tests {
@@ -14,7 +13,8 @@ tests {
     expect(res.getStatus()).to.equal(200);
   });
   test("Response has name", function() {
+    const contextName = bru.getVar("contextName");
     const data = res.getBody();
-    expect(data.name).to.equal("Health");
+    expect(data.name).to.equal(contextName);
   });
 }

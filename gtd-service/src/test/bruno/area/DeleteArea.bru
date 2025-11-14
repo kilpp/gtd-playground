@@ -1,0 +1,25 @@
+meta {
+  name: Delete Area
+  type: http
+  seq: 19
+}
+
+
+delete {
+  url: {{host}}/api/areas/{{areaId}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+tests {
+  test("Status is 204", function() {
+    expect(res.getStatus()).to.equal(204);
+  });
+}
+ 
+script:post-response  {
+  // Delete a user used for area tests
+  const response = await bru.runRequest("user/DeleteUser.bru");
+}
