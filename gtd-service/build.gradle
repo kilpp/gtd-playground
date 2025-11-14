@@ -1,13 +1,17 @@
 plugins {
     id 'java'
+    id 'application'
     id 'org.springframework.boot' version '3.5.7'
     id 'io.spring.dependency-management' version '1.1.7'
+}
+
+application {
+    mainClass = 'org.gk.gtdservice.GtdServiceApplication'
 }
 
 group = 'org.gk'
 version = '0.0.1-SNAPSHOT'
 description = 'gtd-service'
-
 java {
     toolchain {
         languageVersion = JavaLanguageVersion.of(25)
@@ -30,13 +34,6 @@ dependencies {
     testImplementation 'org.mockito:mockito-junit-jupiter:5.10.0'
     testImplementation 'com.h2database:h2'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
-}
-
-// explicitly configure bootJar main class (helps Gradle resolve main when auto-detection fails)
-import org.springframework.boot.gradle.tasks.bundling.BootJar
-
-tasks.named('bootJar', BootJar) {
-    mainClass.set('org.gk.gtdservice.GtdServiceApplication')
 }
 
 tasks.named('test') {

@@ -4,9 +4,8 @@ meta {
   seq: 5
 }
 
-http {
-  method: DELETE
-  url: {{host}}/api/users/1
+delete {
+  url: {{host}}/api/users/{{userId}}
 }
 
 tests {

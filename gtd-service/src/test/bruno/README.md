@@ -18,7 +18,7 @@ This directory contains Bruno API automation tests for the GTD Service APIs.
 
    Or to generate a report:
    ```
-   bru run --env dev --output results.json
+   bru run --env dev --output results.html
    ```
 
 ## Test Structure

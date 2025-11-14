@@ -4,9 +4,8 @@ meta {
   seq: 9
 }
 
-http {
-  method: GET
-  url: {{host}}/api/contexts?userId=2
+get {
+  url: {{host}}/api/contexts?userId={{userId}}
 }
 
 tests {

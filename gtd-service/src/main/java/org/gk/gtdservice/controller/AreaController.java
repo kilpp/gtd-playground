@@ -40,13 +40,9 @@ public class AreaController {
 
     @GetMapping("/{id}")
     public AreaDto get(@PathVariable Long id) {
-        Area a = repository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Area not found"));
-        return AreaMapper.toDto(a);
-    }
-
-    @GetMapping("/user/{userId}")
-    public List<AreaDto> listByUser(@PathVariable Long userId) {
-        return repository.findByUserId(userId).stream().map(AreaMapper::toDto).collect(Collectors.toList());
+        return repository.findById(id)
+                .map(AreaMapper::toDto)
+                .orElseThrow(() -> new ResourceNotFoundException("Area not found"));
     }
 
     @PostMapping

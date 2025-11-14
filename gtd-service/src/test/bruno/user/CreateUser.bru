@@ -1,0 +1,41 @@
+meta {
+  name: Create User
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{host}}/api/users
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body {
+    {
+    "username": "{{$randomUUID}}",
+    "email": "{{$randomEmail}}",
+    "name": "{{$randomFullName}}"
+    }
+}
+
+tests {
+  test("Status is 201", function() {
+    expect(res.getStatus()).to.equal(201);
+  });
+  test("Response has id", function() {
+    const data = res.getBody();
+    expect(data.id).to.be.a('number');
+    expect(data.username).to.be.a('string');
+    expect(data.email).to.be.a('string');
+    expect(data.name).to.be.a('string');
+  });
+}
+
+script:post-response {
+  bru.setVar("userId", res.body.id);
+  bru.setVar("username", res.body.username);
+  bru.setVar("email", res.body.email);
+  bru.setVar("name", res.body.name);
+}

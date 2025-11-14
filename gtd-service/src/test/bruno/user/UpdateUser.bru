@@ -1,0 +1,38 @@
+meta {
+  name: Update User
+  type: http
+  seq: 4
+}
+
+put {
+  url: {{host}}/api/users/{{userId}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body {
+  {
+    "username": "{{$randomUUID}}",
+    "email": "{{$randomEmail}}",
+    "name": "{{$randomFullName}}"
+  }
+}
+
+tests {
+  test("Status is 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+  test("Response has updated name", function() {
+    const username = bru.getVar("username");
+    const id = bru.getVar("userId");
+    const email = bru.getVar("email");
+    const name = bru.getVar("name");
+    const data = res.getBody();
+    expect(data.id).to.be.equal(id);
+    expect(data.username).to.not.equal(username);
+    expect(data.name).to.not.equal(name);
+    expect(data.email).to.not.equal(email);
+  });
+}
