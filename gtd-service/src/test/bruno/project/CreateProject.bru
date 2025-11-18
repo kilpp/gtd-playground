@@ -1,0 +1,48 @@
+meta {
+  name: Create Project
+  type: http
+  seq: 20
+}
+
+post {
+  url: {{host}}/api/projects
+}
+
+script:pre-request {
+  // Create an area for the project
+  const areaResponse = await bru.runRequest("area/CreateArea.bru");
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body {
+    {
+      "userId": "{{userId}}",
+      "areaId": "{{areaId}}",
+      "title": "{{$randomProductName}} Project",
+      "outcome": "{{$randomCatchPhrase}}",
+      "notes": "{{$randomLoremSentence}}",
+      "status": "active",
+      "dueDate": "2025-12-31"
+    }
+}
+
+tests {
+  test("Status is 201", function() {
+    expect(res.getStatus()).to.equal(201);
+  });
+  test("Response has id", function() {
+    const data = res.getBody();
+    expect(data.id).to.be.a('number');
+    expect(data.title).to.be.a('string');
+    expect(data.outcome).to.be.a('string');
+    expect(data.status).to.equal('active');
+    expect(data.userId).to.equal(Number(bru.getVar("userId")));
+    expect(data.areaId).to.equal(Number(bru.getVar("areaId")));
+    expect(data.completedAt).to.be.null;
+    bru.setVar("projectId", data.id);
+    bru.setVar("projectTitle", data.title);
+  });
+}

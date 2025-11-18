@@ -1,0 +1,37 @@
+meta {
+  name: Update Project To Completed
+  type: http
+  seq: 27
+}
+
+put {
+  url: {{host}}/api/projects/{{projectId}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body {
+  {
+    "userId": "{{userId}}",
+    "areaId": "{{areaId}}",
+    "title": "{{projectTitle}}",
+    "outcome": "Completed successfully",
+    "notes": "All done!",
+    "status": "completed",
+    "dueDate": "2026-06-30"
+  }
+}
+
+tests {
+  test("Status is 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+  test("Response has completed status and completedAt", function() {
+    const data = res.getBody();
+    expect(data.status).to.equal("completed");
+    expect(data.completedAt).to.not.be.null;
+    expect(data.completedAt).to.be.a("string");
+  });
+}

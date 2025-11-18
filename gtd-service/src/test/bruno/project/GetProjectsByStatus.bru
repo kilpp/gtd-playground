@@ -1,0 +1,29 @@
+meta {
+  name: Get Projects By Status
+  type: http
+  seq: 25
+}
+
+get {
+  url: {{host}}/api/projects?status=active
+}
+
+headers {
+  Content-Type: application/json
+}
+
+tests {
+  test("Status is 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+  test("Response is array", function() {
+    const data = res.getBody();
+    expect(data).to.be.an('array');
+  });
+  test("All projects have active status", function() {
+    const data = res.getBody();
+    data.forEach(project => {
+      expect(project.status).to.equal('active');
+    });
+  });
+}
