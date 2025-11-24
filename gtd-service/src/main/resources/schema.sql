@@ -46,3 +46,29 @@ CREATE TABLE IF NOT EXISTS gtd.projects
     CONSTRAINT fk_project_area FOREIGN KEY (area_id) REFERENCES gtd.areas (id),
     CONSTRAINT chk_project_status CHECK (status IN ('active', 'on_hold', 'someday', 'completed', 'dropped'))
 );
+
+CREATE TABLE IF NOT EXISTS gtd.tasks
+(
+    id                BIGINT AUTO_INCREMENT PRIMARY KEY,
+    user_id           BIGINT       NOT NULL,
+    project_id        BIGINT,
+    context_id        BIGINT,
+    title             VARCHAR(500) NOT NULL,
+    notes             TEXT,
+    status            VARCHAR(20)  NOT NULL DEFAULT 'inbox',
+    priority          INT,
+    energy            INT,
+    duration_est_min  INT,
+    due_at            TIMESTAMP,
+    defer_until       TIMESTAMP,
+    waiting_on        VARCHAR(200),
+    waiting_since     TIMESTAMP,
+    created_at        TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    completed_at      TIMESTAMP,
+    order_index       INT,
+    CONSTRAINT fk_task_user FOREIGN KEY (user_id) REFERENCES gtd.users (id),
+    CONSTRAINT fk_task_project FOREIGN KEY (project_id) REFERENCES gtd.projects (id),
+    CONSTRAINT fk_task_context FOREIGN KEY (context_id) REFERENCES gtd.contexts (id),
+    CONSTRAINT chk_task_status CHECK (status IN ('inbox', 'next', 'waiting', 'scheduled', 'someday', 'reference', 'done', 'dropped')),
+    CONSTRAINT chk_task_energy CHECK (energy >= 1 AND energy <= 5)
+);
