@@ -1,0 +1,29 @@
+meta {
+  name: Get Tasks By Status
+  type: http
+  seq: 36
+}
+
+get {
+  url: {{host}}/api/tasks?status=inbox
+}
+
+headers {
+  Content-Type: application/json
+}
+
+tests {
+  test("Status is 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+  test("Response is array", function() {
+    const data = res.getBody();
+    expect(data).to.be.an('array');
+  });
+  test("All tasks have inbox status", function() {
+    const data = res.getBody();
+    data.forEach(task => {
+      expect(task.status).to.equal('inbox');
+    });
+  });
+}

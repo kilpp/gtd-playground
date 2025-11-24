@@ -1,0 +1,30 @@
+meta {
+  name: Delete Task
+  type: http
+  seq: 40
+}
+
+
+delete {
+  url: {{host}}/api/tasks/{{taskId}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+tests {
+  test("Status is 204", function() {
+    expect(res.getStatus()).to.equal(204);
+  });
+}
+ 
+script:post-response  {
+  // Delete the context used for task tests
+  const contextResponse = await bru.runRequest("context/DeleteContext.bru");
+  
+  // Delete the project used for task tests
+  const projectResponse = await bru.runRequest("project/DeleteProject.bru");
+  
+  // User cleanup happens in DeleteProject -> DeleteArea post-response
+}

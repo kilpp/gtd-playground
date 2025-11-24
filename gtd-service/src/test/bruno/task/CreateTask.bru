@@ -1,0 +1,61 @@
+meta {
+  name: Create Task
+  type: http
+  seq: 30
+}
+
+post {
+  url: {{host}}/api/tasks
+}
+
+script:pre-request {
+  // Create a user first if userId is not set
+  const userResponse = await bru.runRequest("user/CreateUser.bru");
+  
+  // Create a project for the task
+  const projectResponse = await bru.runRequest("project/CreateProject.bru");
+  
+  // Create a context for the task
+  const contextResponse = await bru.runRequest("context/CreateContext.bru");
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body {
+    {
+      "userId": "{{userId}}",
+      "projectId": "{{projectId}}",
+      "contextId": "{{contextId}}",
+      "title": "{{$randomProductName}} task",
+      "notes": "{{$randomLoremSentence}}",
+      "status": "inbox",
+      "priority": 1,
+      "energy": 3,
+      "durationEstMin": 30,
+      "dueAt": "2025-12-31T23:59:59Z",
+      "deferUntil": null,
+      "waitingOn": null,
+      "waitingSince": null,
+      "orderIndex": null
+    }
+}
+
+tests {
+  test("Status is 201", function() {
+    expect(res.getStatus()).to.equal(201);
+  });
+  test("Response has id", function() {
+    const data = res.getBody();
+    expect(data.id).to.be.a('number');
+    expect(data.title).to.be.a('string');
+    expect(data.status).to.equal('inbox');
+    expect(data.userId).to.equal(Number(bru.getVar("userId")));
+    expect(data.projectId).to.equal(Number(bru.getVar("projectId")));
+    expect(data.contextId).to.equal(Number(bru.getVar("contextId")));
+    expect(data.completedAt).to.be.null;
+    bru.setVar("taskId", data.id);
+    bru.setVar("taskTitle", data.title);
+  });
+}

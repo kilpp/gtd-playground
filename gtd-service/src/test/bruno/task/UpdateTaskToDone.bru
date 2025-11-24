@@ -1,0 +1,44 @@
+meta {
+  name: Update Task To Done
+  type: http
+  seq: 38
+}
+
+put {
+  url: {{host}}/api/tasks/{{taskId}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body {
+  {
+    "userId": "{{userId}}",
+    "projectId": "{{projectId}}",
+    "contextId": "{{contextId}}",
+    "title": "{{taskTitle}}",
+    "notes": "Completed successfully",
+    "status": "done",
+    "priority": 1,
+    "energy": 3,
+    "durationEstMin": 30,
+    "dueAt": null,
+    "deferUntil": null,
+    "waitingOn": null,
+    "waitingSince": null,
+    "orderIndex": null
+  }
+}
+
+tests {
+  test("Status is 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+  test("Response has done status and completedAt", function() {
+    const data = res.getBody();
+    expect(data.status).to.equal("done");
+    expect(data.completedAt).to.not.be.null;
+    expect(data.completedAt).to.be.a("string");
+  });
+}

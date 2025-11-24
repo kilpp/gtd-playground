@@ -1,0 +1,47 @@
+meta {
+  name: Update Task
+  type: http
+  seq: 37
+}
+
+put {
+  url: {{host}}/api/tasks/{{taskId}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body {
+  {
+    "userId": "{{userId}}",
+    "projectId": "{{projectId}}",
+    "contextId": "{{contextId}}",
+    "title": "{{taskTitle}} Updated",
+    "notes": "Updated notes",
+    "status": "next",
+    "priority": 2,
+    "energy": 4,
+    "durationEstMin": 45,
+    "dueAt": "2026-06-30T23:59:59Z",
+    "deferUntil": null,
+    "waitingOn": null,
+    "waitingSince": null,
+    "orderIndex": 100
+  }
+}
+
+tests {
+  test("Status is 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+  test("Response has updated fields", function() {
+    const data = res.getBody();
+    expect(data.title).to.be.a("string");
+    expect(data.status).to.equal("next");
+    expect(data.notes).to.equal("Updated notes");
+    expect(data.priority).to.equal(2);
+    expect(data.energy).to.equal(4);
+    expect(data.orderIndex).to.equal(100);
+  });
+}

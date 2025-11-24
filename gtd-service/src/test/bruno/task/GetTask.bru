@@ -1,0 +1,24 @@
+meta {
+  name: Get Task
+  type: http
+  seq: 31
+}
+
+get {
+  url: {{host}}/api/tasks/{{taskId}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+tests {
+  test("Status is 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+  test("Response has title", function() {
+    const data = res.getBody();
+    expect(data.title).to.be.a("string");
+    expect(data.id).to.equal(Number(bru.getVar("taskId")));
+  });
+}
