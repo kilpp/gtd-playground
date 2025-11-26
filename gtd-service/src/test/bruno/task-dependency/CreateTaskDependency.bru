@@ -1,0 +1,40 @@
+meta {
+  name: Create Task Dependency
+  type: http
+  seq: 50
+}
+
+post {
+  url: {{host}}/api/task-dependencies
+}
+
+script:pre-request {
+  // Create tasks for dependency
+  const task1Response = await bru.runRequest("task/CreateTask.bru");
+  bru.setVar("task1Id", bru.getVar("taskId"));
+  
+  const task2Response = await bru.runRequest("task/CreateTask.bru");
+  bru.setVar("task2Id", bru.getVar("taskId"));
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body {
+    {
+      "taskId": "{{task2Id}}",
+      "dependsOnTaskId": "{{task1Id}}"
+    }
+}
+
+tests {
+  test("Status is 201", function() {
+    expect(res.getStatus()).to.equal(201);
+  });
+  test("Response has correct fields", function() {
+    const data = res.getBody();
+    expect(data.taskId).to.equal(Number(bru.getVar("task2Id")));
+    expect(data.dependsOnTaskId).to.equal(Number(bru.getVar("task1Id")));
+  });
+}

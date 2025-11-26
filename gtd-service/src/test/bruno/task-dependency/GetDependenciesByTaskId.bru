@@ -1,0 +1,31 @@
+meta {
+  name: Get Dependencies By Task Id
+  type: http
+  seq: 53
+}
+
+get {
+  url: {{host}}/api/task-dependencies?taskId={{task2Id}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+tests {
+  test("Status is 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+  test("Response is array", function() {
+    const data = res.getBody();
+    expect(data).to.be.an('array');
+    expect(data.length).to.be.at.least(1);
+  });
+  test("All dependencies belong to task", function() {
+    const data = res.getBody();
+    const taskId = Number(bru.getVar("task2Id"));
+    data.forEach(dep => {
+      expect(dep.taskId).to.equal(taskId);
+    });
+  });
+}

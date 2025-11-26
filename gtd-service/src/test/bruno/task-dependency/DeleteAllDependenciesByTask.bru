@@ -1,0 +1,24 @@
+meta {
+  name: Delete All Dependencies By Task
+  type: http
+  seq: 56
+}
+
+delete {
+  url: {{host}}/api/task-dependencies/task/{{task1Id}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+tests {
+  test("Status is 204", function() {
+    expect(res.getStatus()).to.equal(204);
+  });
+}
+
+script:post-response {
+  // Clean up tasks
+  await bru.runRequest("task/DeleteTask.bru");
+}

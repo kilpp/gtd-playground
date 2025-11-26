@@ -1,0 +1,31 @@
+meta {
+  name: Get Tasks Depending On
+  type: http
+  seq: 54
+}
+
+get {
+  url: {{host}}/api/task-dependencies?dependsOnTaskId={{task1Id}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+tests {
+  test("Status is 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+  test("Response is array", function() {
+    const data = res.getBody();
+    expect(data).to.be.an('array');
+    expect(data.length).to.be.at.least(1);
+  });
+  test("All tasks depend on specified task", function() {
+    const data = res.getBody();
+    const dependsOnTaskId = Number(bru.getVar("task1Id"));
+    data.forEach(dep => {
+      expect(dep.dependsOnTaskId).to.equal(dependsOnTaskId);
+    });
+  });
+}

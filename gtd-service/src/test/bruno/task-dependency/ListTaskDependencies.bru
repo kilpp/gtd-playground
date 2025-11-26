@@ -1,0 +1,24 @@
+meta {
+  name: List Task Dependencies
+  type: http
+  seq: 52
+}
+
+get {
+  url: {{host}}/api/task-dependencies
+}
+
+headers {
+  Content-Type: application/json
+}
+
+tests {
+  test("Status is 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+  test("Response is array", function() {
+    const data = res.getBody();
+    expect(data).to.be.an('array');
+    expect(data.length).to.be.at.least(1);
+  });
+}

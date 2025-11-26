@@ -1,0 +1,24 @@
+meta {
+  name: Get Task Dependency
+  type: http
+  seq: 51
+}
+
+get {
+  url: {{host}}/api/task-dependencies/{{task2Id}}/{{task1Id}}
+}
+
+headers {
+  Content-Type: application/json
+}
+
+tests {
+  test("Status is 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+  test("Response has correct fields", function() {
+    const data = res.getBody();
+    expect(data.taskId).to.equal(Number(bru.getVar("task2Id")));
+    expect(data.dependsOnTaskId).to.equal(Number(bru.getVar("task1Id")));
+  });
+}
