@@ -72,3 +72,13 @@ CREATE TABLE IF NOT EXISTS gtd.tasks
     CONSTRAINT chk_task_status CHECK (status IN ('inbox', 'next', 'waiting', 'scheduled', 'someday', 'reference', 'done', 'dropped')),
     CONSTRAINT chk_task_energy CHECK (energy >= 1 AND energy <= 5)
 );
+
+CREATE TABLE IF NOT EXISTS gtd.task_dependencies
+(
+    task_id            BIGINT NOT NULL,
+    depends_on_task_id BIGINT NOT NULL,
+    PRIMARY KEY (task_id, depends_on_task_id),
+    CONSTRAINT fk_task_dependency_task FOREIGN KEY (task_id) REFERENCES gtd.tasks (id) ON DELETE CASCADE,
+    CONSTRAINT fk_task_dependency_depends_on FOREIGN KEY (depends_on_task_id) REFERENCES gtd.tasks (id) ON DELETE CASCADE,
+    CONSTRAINT chk_no_self_dependency CHECK (task_id != depends_on_task_id)
+);
