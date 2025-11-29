@@ -82,3 +82,13 @@ CREATE TABLE IF NOT EXISTS gtd.task_dependencies
     CONSTRAINT fk_task_dependency_depends_on FOREIGN KEY (depends_on_task_id) REFERENCES gtd.tasks (id) ON DELETE CASCADE,
     CONSTRAINT chk_no_self_dependency CHECK (task_id != depends_on_task_id)
 );
+
+CREATE TABLE IF NOT EXISTS gtd.tags
+(
+    id         BIGINT AUTO_INCREMENT PRIMARY KEY,
+    user_id    BIGINT NOT NULL,
+    name       VARCHAR(50) NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_tag_user FOREIGN KEY (user_id) REFERENCES gtd.users (id),
+    CONSTRAINT uq_tag_user_name UNIQUE (user_id, name)
+);
