@@ -1,0 +1,27 @@
+meta {
+  name: List Tags By User
+  type: http
+  seq: 4
+}
+
+http {
+  method: GET
+  url: {{host}}/api/tags?userId={{userId}}
+}
+
+tests {
+  test("Status is 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+  test("Response is array", function() {
+    const data = res.getBody();
+    expect(data).to.be.an('array');
+  });
+  test("All tags belong to user", function() {
+    const userId = parseInt(bru.getVar("userId"));
+    const data = res.getBody();
+    data.forEach(tag => {
+      expect(tag.userId).to.equal(userId);
+    });
+  });
+}

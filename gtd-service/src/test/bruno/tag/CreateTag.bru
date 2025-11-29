@@ -1,0 +1,38 @@
+meta {
+  name: Create Tag
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{host}}/api/tags
+}
+
+script:pre-request {
+  // Create a user first if userId is not set
+  const response = await bru.runRequest("user/CreateUser.bru");
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body {
+    {
+      "userId": "{{userId}}",
+      "name": "{{$randomWord}}"
+    }
+}
+
+tests {
+  test("Status is 201", function() {
+    expect(res.getStatus()).to.equal(201);
+  });
+  test("Response has id", function() {
+    const data = res.getBody();
+    expect(data.id).to.be.a('number');
+    expect(data.name).to.be.a('string');
+    bru.setVar("tagId", data.id);
+    bru.setVar("tagName", data.name);
+  });
+}
