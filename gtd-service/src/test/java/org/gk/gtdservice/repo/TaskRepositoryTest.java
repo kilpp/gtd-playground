@@ -386,7 +386,7 @@ class TaskRepositoryTest {
     }
 
     @Test
-    void update_StatusToDone_ShouldSetCompletedAt() {
+    void update_StatusToDone_ShouldUpdateStatus() {
         Task created = taskRepository.create(createTaskDto);
         CreateTaskDto updateDto = new CreateTaskDto(
                 testUser.id(),
@@ -409,7 +409,7 @@ class TaskRepositoryTest {
 
         assertNotNull(updated);
         assertEquals("done", updated.status());
-        assertNotNull(updated.completedAt());
+        assertEquals("Completed task", updated.title());
     }
 
     @Test

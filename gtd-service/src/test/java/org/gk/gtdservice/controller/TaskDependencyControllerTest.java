@@ -133,6 +133,7 @@ class TaskDependencyControllerTest {
     @Test
     void create_SelfDependency_ShouldThrowException() {
         CreateTaskDependencyDto selfDep = new CreateTaskDependencyDto(1L, 1L);
+        when(taskRepository.findById(1L)).thenReturn(Optional.of(testTask1));
 
         assertThrows(IllegalArgumentException.class, () -> controller.create(selfDep));
     }
