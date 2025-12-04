@@ -179,31 +179,10 @@ public class TaskRepository {
 
     public Task update(Long id, CreateTaskDto dto) {
         logger.info("Updating task with id: {}, dto: {}", id, dto);
-        
-        // Determine if we need to update completed_at
-        Optional<Task> existing = findById(id);
-        Instant completedAt = null;
-        if (existing.isPresent()) {
-            Task currentTask = existing.get();
-            // If status is changing to 'done', set completed_at
-            if ("done".equals(dto.status()) && !"done".equals(currentTask.status())) {
-                completedAt = Instant.now();
-            }
-            // If status is changing from 'done' to something else, clear completed_at
-            else if (!"done".equals(dto.status()) && "done".equals(currentTask.status())) {
-                completedAt = null; // Will be handled by SQL
-            }
-            // If already done and staying done, keep the old timestamp
-            else if ("done".equals(dto.status()) && "done".equals(currentTask.status())) {
-                completedAt = currentTask.completedAt();
-            }
-        }
-
         String sql = "UPDATE gtd.tasks SET user_id = :user_id, project_id = :project_id, context_id = :context_id, " +
                      "title = :title, notes = :notes, status = :status, priority = :priority, energy = :energy, " +
                      "duration_est_min = :duration_est_min, due_at = :due_at, defer_until = :defer_until, " +
-                     "waiting_on = :waiting_on, waiting_since = :waiting_since, completed_at = :completed_at, " +
-                     "order_index = :order_index WHERE id = :id";
+                     "waiting_on = :waiting_on, waiting_since = :waiting_since, order_index = :order_index WHERE id = :id";
         MapSqlParameterSource params = new MapSqlParameterSource()
                 .addValue("user_id", dto.userId())
                 .addValue("project_id", dto.projectId())
@@ -218,7 +197,6 @@ public class TaskRepository {
                 .addValue("defer_until", dto.deferUntil() != null ? Timestamp.from(dto.deferUntil()) : null)
                 .addValue("waiting_on", dto.waitingOn())
                 .addValue("waiting_since", dto.waitingSince() != null ? Timestamp.from(dto.waitingSince()) : null)
-                .addValue("completed_at", completedAt != null ? Timestamp.from(completedAt) : null)
                 .addValue("order_index", dto.orderIndex())
                 .addValue("id", id);
         int updated = jdbc.update(sql, params);

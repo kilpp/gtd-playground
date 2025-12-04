@@ -3,14 +3,7 @@ package org.gk.gtdservice.controller;
 import org.gk.gtdservice.dto.CreateTaskDto;
 import org.gk.gtdservice.dto.TaskDto;
 import org.gk.gtdservice.exception.ResourceNotFoundException;
-import org.gk.gtdservice.model.Context;
-import org.gk.gtdservice.model.Project;
-import org.gk.gtdservice.model.Task;
-import org.gk.gtdservice.model.User;
-import org.gk.gtdservice.repo.ContextRepository;
-import org.gk.gtdservice.repo.ProjectRepository;
-import org.gk.gtdservice.repo.TaskRepository;
-import org.gk.gtdservice.repo.UserRepository;
+import org.gk.gtdservice.service.TaskService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -21,46 +14,28 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
 import java.time.Instant;
-import java.time.LocalDate;
 import java.util.List;
-import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.when;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class TaskControllerTest {
 
     @Mock
-    private TaskRepository taskRepository;
-
-    @Mock
-    private UserRepository userRepository;
-
-    @Mock
-    private ProjectRepository projectRepository;
-
-    @Mock
-    private ContextRepository contextRepository;
+    private TaskService taskService;
 
     @InjectMocks
     private TaskController taskController;
 
-    private Task testTask;
+    private TaskDto testTaskDto;
     private CreateTaskDto createTaskDto;
-    private User testUser;
-    private Project testProject;
-    private Context testContext;
 
     @BeforeEach
     void setUp() {
-        testUser = new User(1L, "testuser", "test@example.com", "Test User", Instant.now());
-        testProject = new Project(2L, 1L, null, "Test Project", "Outcome", null, "active", 
-                                  LocalDate.of(2025, 12, 31), Instant.now(), null);
-        testContext = new Context(3L, 1L, "Office", "Office context", false, Instant.now());
-        
-        testTask = new Task(
+        testTaskDto = new TaskDto(
                 1L,
                 1L,
                 2L,
@@ -100,88 +75,93 @@ class TaskControllerTest {
 
     @Test
     void list_AllTasks_ShouldReturnAllTasks() {
-        when(taskRepository.findAll()).thenReturn(List.of(testTask));
+        when(taskService.findAll()).thenReturn(List.of(testTaskDto));
 
         List<TaskDto> result = taskController.list(null, null, null, null);
 
         assertNotNull(result);
         assertEquals(1, result.size());
-        assertEquals(testTask.title(), result.get(0).title());
+        assertEquals(testTaskDto.title(), result.get(0).title());
+        verify(taskService).findAll();
     }
 
     @Test
     void list_TasksByUserId_ShouldReturnTasksForUser() {
-        when(taskRepository.findByUserId(1L)).thenReturn(List.of(testTask));
+        when(taskService.findByUserId(1L)).thenReturn(List.of(testTaskDto));
 
         List<TaskDto> result = taskController.list(1L, null, null, null);
 
         assertNotNull(result);
         assertEquals(1, result.size());
-        assertEquals(testTask.title(), result.get(0).title());
+        assertEquals(testTaskDto.title(), result.get(0).title());
+        verify(taskService).findByUserId(1L);
     }
 
     @Test
     void list_TasksByProjectId_ShouldReturnTasksForProject() {
-        when(taskRepository.findByProjectId(2L)).thenReturn(List.of(testTask));
+        when(taskService.findByProjectId(2L)).thenReturn(List.of(testTaskDto));
 
         List<TaskDto> result = taskController.list(null, 2L, null, null);
 
         assertNotNull(result);
         assertEquals(1, result.size());
-        assertEquals(testTask.title(), result.get(0).title());
+        assertEquals(testTaskDto.title(), result.get(0).title());
+        verify(taskService).findByProjectId(2L);
     }
 
     @Test
     void list_TasksByContextId_ShouldReturnTasksForContext() {
-        when(taskRepository.findByContextId(3L)).thenReturn(List.of(testTask));
+        when(taskService.findByContextId(3L)).thenReturn(List.of(testTaskDto));
 
         List<TaskDto> result = taskController.list(null, null, 3L, null);
 
         assertNotNull(result);
         assertEquals(1, result.size());
-        assertEquals(testTask.title(), result.get(0).title());
+        assertEquals(testTaskDto.title(), result.get(0).title());
+        verify(taskService).findByContextId(3L);
     }
 
     @Test
     void list_TasksByStatus_ShouldReturnTasksWithStatus() {
-        when(taskRepository.findByStatus("inbox")).thenReturn(List.of(testTask));
+        when(taskService.findByStatus("inbox")).thenReturn(List.of(testTaskDto));
 
         List<TaskDto> result = taskController.list(null, null, null, "inbox");
 
         assertNotNull(result);
         assertEquals(1, result.size());
-        assertEquals(testTask.title(), result.get(0).title());
+        assertEquals(testTaskDto.title(), result.get(0).title());
+        verify(taskService).findByStatus("inbox");
     }
 
     @Test
     void get_ExistingTask_ShouldReturnTask() {
-        when(taskRepository.findById(1L)).thenReturn(Optional.of(testTask));
+        when(taskService.findById(1L)).thenReturn(testTaskDto);
 
         TaskDto result = taskController.get(1L);
 
         assertNotNull(result);
-        assertEquals(testTask.title(), result.title());
+        assertEquals(testTaskDto.title(), result.title());
+        verify(taskService).findById(1L);
     }
 
     @Test
     void get_NonExistingTask_ShouldThrowException() {
-        when(taskRepository.findById(1L)).thenReturn(Optional.empty());
+        when(taskService.findById(1L)).thenThrow(new ResourceNotFoundException("Task not found"));
 
         assertThrows(ResourceNotFoundException.class, () -> taskController.get(1L));
+        verify(taskService).findById(1L);
     }
 
     @Test
     void create_NewTask_ShouldReturnCreated() {
-        when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
-        when(projectRepository.findById(2L)).thenReturn(Optional.of(testProject));
-        when(contextRepository.findById(3L)).thenReturn(Optional.of(testContext));
-        when(taskRepository.create(any())).thenReturn(testTask);
+        when(taskService.create(any(CreateTaskDto.class))).thenReturn(testTaskDto);
 
         ResponseEntity<TaskDto> response = taskController.create(createTaskDto);
 
         assertEquals(HttpStatus.CREATED, response.getStatusCode());
         assertNotNull(response.getBody());
-        assertEquals(testTask.title(), response.getBody().title());
+        assertEquals(testTaskDto.title(), response.getBody().title());
+        verify(taskService).create(any(CreateTaskDto.class));
     }
 
     @Test
@@ -202,86 +182,85 @@ class TaskControllerTest {
                 null,
                 null
         );
-        Task taskWithoutRefs = new Task(
+        TaskDto taskDtoWithoutRefs = new TaskDto(
                 1L, 1L, null, null, "Simple task", null, "inbox", null, null, null, 
                 null, null, null, null, Instant.now(), null, null
         );
-        when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
-        when(taskRepository.create(any())).thenReturn(taskWithoutRefs);
+        when(taskService.create(any(CreateTaskDto.class))).thenReturn(taskDtoWithoutRefs);
 
         ResponseEntity<TaskDto> response = taskController.create(dtoWithoutRefs);
 
         assertEquals(HttpStatus.CREATED, response.getStatusCode());
         assertNotNull(response.getBody());
+        verify(taskService).create(any(CreateTaskDto.class));
     }
 
     @Test
     void create_NonExistingUser_ShouldThrowException() {
-        when(userRepository.findById(1L)).thenReturn(Optional.empty());
+        when(taskService.create(any(CreateTaskDto.class))).thenThrow(new ResourceNotFoundException("User not found"));
 
         assertThrows(ResourceNotFoundException.class, () -> taskController.create(createTaskDto));
+        verify(taskService).create(any(CreateTaskDto.class));
     }
 
     @Test
     void create_NonExistingProject_ShouldThrowException() {
-        when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
-        when(projectRepository.findById(2L)).thenReturn(Optional.empty());
+        when(taskService.create(any(CreateTaskDto.class))).thenThrow(new ResourceNotFoundException("Project not found"));
 
         assertThrows(ResourceNotFoundException.class, () -> taskController.create(createTaskDto));
+        verify(taskService).create(any(CreateTaskDto.class));
     }
 
     @Test
     void create_NonExistingContext_ShouldThrowException() {
-        when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
-        when(projectRepository.findById(2L)).thenReturn(Optional.of(testProject));
-        when(contextRepository.findById(3L)).thenReturn(Optional.empty());
+        when(taskService.create(any(CreateTaskDto.class))).thenThrow(new ResourceNotFoundException("Context not found"));
 
         assertThrows(ResourceNotFoundException.class, () -> taskController.create(createTaskDto));
+        verify(taskService).create(any(CreateTaskDto.class));
     }
 
     @Test
     void update_ExistingTask_ShouldReturnUpdated() {
-        when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
-        when(projectRepository.findById(2L)).thenReturn(Optional.of(testProject));
-        when(contextRepository.findById(3L)).thenReturn(Optional.of(testContext));
-        when(taskRepository.update(1L, createTaskDto)).thenReturn(testTask);
+        when(taskService.update(eq(1L), any(CreateTaskDto.class))).thenReturn(testTaskDto);
 
         TaskDto result = taskController.update(1L, createTaskDto);
 
         assertNotNull(result);
-        assertEquals(testTask.title(), result.title());
+        assertEquals(testTaskDto.title(), result.title());
+        verify(taskService).update(eq(1L), any(CreateTaskDto.class));
     }
 
     @Test
     void update_NonExistingTask_ShouldThrowException() {
-        when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
-        when(projectRepository.findById(2L)).thenReturn(Optional.of(testProject));
-        when(contextRepository.findById(3L)).thenReturn(Optional.of(testContext));
-        when(taskRepository.update(1L, createTaskDto)).thenReturn(null);
+        when(taskService.update(eq(1L), any(CreateTaskDto.class))).thenThrow(new ResourceNotFoundException("Task not found"));
 
         assertThrows(ResourceNotFoundException.class, () -> taskController.update(1L, createTaskDto));
+        verify(taskService).update(eq(1L), any(CreateTaskDto.class));
     }
 
     @Test
     void update_NonExistingUser_ShouldThrowException() {
-        when(userRepository.findById(1L)).thenReturn(Optional.empty());
+        when(taskService.update(eq(1L), any(CreateTaskDto.class))).thenThrow(new ResourceNotFoundException("User not found"));
 
         assertThrows(ResourceNotFoundException.class, () -> taskController.update(1L, createTaskDto));
+        verify(taskService).update(eq(1L), any(CreateTaskDto.class));
     }
 
     @Test
     void delete_ExistingTask_ShouldReturnNoContent() {
-        when(taskRepository.delete(1L)).thenReturn(true);
+        doNothing().when(taskService).delete(1L);
 
         ResponseEntity<Void> response = taskController.delete(1L);
 
         assertEquals(HttpStatus.NO_CONTENT, response.getStatusCode());
+        verify(taskService).delete(1L);
     }
 
     @Test
     void delete_NonExistingTask_ShouldThrowException() {
-        when(taskRepository.delete(1L)).thenReturn(false);
+        doThrow(new ResourceNotFoundException("Task not found")).when(taskService).delete(1L);
 
         assertThrows(ResourceNotFoundException.class, () -> taskController.delete(1L));
+        verify(taskService).delete(1L);
     }
 }
