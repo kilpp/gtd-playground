@@ -1,0 +1,25 @@
+meta {
+  name: Add Tag to Task
+  type: http
+  seq: 100
+}
+
+post {
+  url: {{host}}/api/tasks/{{taskId}}/tags/{{tagId}}?userId={{userId}}
+}
+
+script:pre-request {
+  // Ensure we have a task and a tag
+  if (!bru.getVar("taskId")) {
+      await bru.runRequest("task/CreateTask.bru");
+  }
+  if (!bru.getVar("tagId")) {
+      await bru.runRequest("tag/CreateTag.bru");
+  }
+}
+
+tests {
+  test("Status is 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+}

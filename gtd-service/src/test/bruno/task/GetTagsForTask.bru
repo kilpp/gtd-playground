@@ -1,0 +1,26 @@
+meta {
+  name: Get Tags for Task
+  type: http
+  seq: 102
+}
+
+get {
+  url: {{host}}/api/tasks/{{taskId}}/tags?userId={{userId}}
+}
+
+script:pre-request {
+  // Ensure we have a task
+  if (!bru.getVar("taskId")) {
+      await bru.runRequest("task/CreateTask.bru");
+  }
+}
+
+tests {
+  test("Status is 200", function() {
+    expect(res.getStatus()).to.equal(200);
+  });
+  test("Response is array", function() {
+    const data = res.getBody();
+    expect(data).to.be.an('array');
+  });
+}

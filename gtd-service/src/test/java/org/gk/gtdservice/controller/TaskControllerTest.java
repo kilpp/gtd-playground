@@ -1,6 +1,7 @@
 package org.gk.gtdservice.controller;
 
 import org.gk.gtdservice.dto.CreateTaskDto;
+import org.gk.gtdservice.dto.TagDto;
 import org.gk.gtdservice.dto.TaskDto;
 import org.gk.gtdservice.exception.ResourceNotFoundException;
 import org.gk.gtdservice.service.TaskService;
@@ -262,5 +263,38 @@ class TaskControllerTest {
 
         assertThrows(ResourceNotFoundException.class, () -> taskController.delete(1L));
         verify(taskService).delete(1L);
+    }
+
+    @Test
+    void addTag_ShouldReturnOk() {
+        doNothing().when(taskService).addTagToTask(1L, 1L, 10L);
+
+        ResponseEntity<Void> response = taskController.addTag(1L, 10L, 1L);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        verify(taskService).addTagToTask(1L, 1L, 10L);
+    }
+
+    @Test
+    void removeTag_ShouldReturnNoContent() {
+        doNothing().when(taskService).removeTagFromTask(1L, 1L, 10L);
+
+        ResponseEntity<Void> response = taskController.removeTag(1L, 10L, 1L);
+
+        assertEquals(HttpStatus.NO_CONTENT, response.getStatusCode());
+        verify(taskService).removeTagFromTask(1L, 1L, 10L);
+    }
+
+    @Test
+    void getTags_ShouldReturnTags() {
+        TagDto tagDto = new TagDto(10L, 1L, "Tag", Instant.now());
+        when(taskService.getTagsForTask(1L, 1L)).thenReturn(List.of(tagDto));
+
+        List<TagDto> result = taskController.getTags(1L, 1L);
+
+        assertNotNull(result);
+        assertEquals(1, result.size());
+        assertEquals(tagDto.name(), result.get(0).name());
+        verify(taskService).getTagsForTask(1L, 1L);
     }
 }

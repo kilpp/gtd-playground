@@ -9,7 +9,9 @@ import org.gk.gtdservice.model.Task;
 import org.gk.gtdservice.model.User;
 import org.gk.gtdservice.repo.ContextRepository;
 import org.gk.gtdservice.repo.ProjectRepository;
+import org.gk.gtdservice.repo.TagRepository;
 import org.gk.gtdservice.repo.TaskRepository;
+import org.gk.gtdservice.repo.TaskTagRepository;
 import org.gk.gtdservice.repo.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -42,6 +44,12 @@ class TaskServiceImplTest {
 
     @Mock
     private ContextRepository contextRepository;
+
+    @Mock
+    private TaskTagRepository taskTagRepository;
+
+    @Mock
+    private TagRepository tagRepository;
 
     @InjectMocks
     private TaskServiceImpl taskService;
@@ -393,9 +401,58 @@ class TaskServiceImplTest {
 
     @Test
     void delete_NonExistingTask_ShouldThrowException() {
-        when(taskRepository.delete(999L)).thenReturn(false);
+        when(taskRepository.delete(1L)).thenReturn(false);
 
-        assertThrows(ResourceNotFoundException.class, () -> taskService.delete(999L));
-        verify(taskRepository).delete(999L);
+        assertThrows(ResourceNotFoundException.class, () -> taskService.delete(1L));
+        verify(taskRepository).delete(1L);
+    }
+
+    // Tag tests
+    @Test
+    void addTagToTask_ShouldAddTag() {
+        org.gk.gtdservice.model.Tag tag = new org.gk.gtdservice.model.Tag(10L, 1L, "Tag", Instant.now());
+        when(taskRepository.findById(1L)).thenReturn(Optional.of(testTask));
+        when(tagRepository.findById(10L)).thenReturn(Optional.of(tag));
+
+        taskService.addTagToTask(1L, 1L, 10L);
+
+        verify(taskTagRepository).addTagToTask(1L, 10L);
+    }
+
+    @Test
+    void addTagToTask_TaskNotFound_ShouldThrowException() {
+        when(taskRepository.findById(1L)).thenReturn(Optional.empty());
+
+        assertThrows(ResourceNotFoundException.class, () -> taskService.addTagToTask(1L, 1L, 10L));
+    }
+
+    @Test
+    void addTagToTask_TagNotFound_ShouldThrowException() {
+        when(taskRepository.findById(1L)).thenReturn(Optional.of(testTask));
+        when(tagRepository.findById(10L)).thenReturn(Optional.empty());
+
+        assertThrows(ResourceNotFoundException.class, () -> taskService.addTagToTask(1L, 1L, 10L));
+    }
+
+    @Test
+    void removeTagFromTask_ShouldRemoveTag() {
+        when(taskRepository.findById(1L)).thenReturn(Optional.of(testTask));
+
+        taskService.removeTagFromTask(1L, 1L, 10L);
+
+        verify(taskTagRepository).removeTagFromTask(1L, 10L);
+    }
+
+    @Test
+    void getTagsForTask_ShouldReturnTags() {
+        org.gk.gtdservice.model.Tag tag = new org.gk.gtdservice.model.Tag(10L, 1L, "Tag", Instant.now());
+        when(taskRepository.findById(1L)).thenReturn(Optional.of(testTask));
+        when(taskTagRepository.findTagsByTaskId(1L)).thenReturn(List.of(tag));
+
+        List<org.gk.gtdservice.dto.TagDto> tags = taskService.getTagsForTask(1L, 1L);
+
+        assertNotNull(tags);
+        assertEquals(1, tags.size());
+        assertEquals(tag.id(), tags.get(0).id());
     }
 }
