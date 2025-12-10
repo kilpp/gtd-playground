@@ -5,9 +5,13 @@ import org.gk.gtdservice.dto.TaskDto;
 import org.gk.gtdservice.exception.ResourceNotFoundException;
 import org.gk.gtdservice.mapper.TaskMapper;
 import org.gk.gtdservice.model.Task;
+import org.gk.gtdservice.dto.TagDto;
+import org.gk.gtdservice.mapper.TagMapper;
 import org.gk.gtdservice.repo.ContextRepository;
 import org.gk.gtdservice.repo.ProjectRepository;
+import org.gk.gtdservice.repo.TagRepository;
 import org.gk.gtdservice.repo.TaskRepository;
+import org.gk.gtdservice.repo.TaskTagRepository;
 import org.gk.gtdservice.repo.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,13 +31,18 @@ public class TaskServiceImpl implements TaskService {
     private final UserRepository userRepository;
     private final ProjectRepository projectRepository;
     private final ContextRepository contextRepository;
+    private final TaskTagRepository taskTagRepository;
+    private final TagRepository tagRepository;
 
     public TaskServiceImpl(TaskRepository taskRepository, UserRepository userRepository,
-                           ProjectRepository projectRepository, ContextRepository contextRepository) {
+                           ProjectRepository projectRepository, ContextRepository contextRepository,
+                           TaskTagRepository taskTagRepository, TagRepository tagRepository) {
         this.taskRepository = taskRepository;
         this.userRepository = userRepository;
         this.projectRepository = projectRepository;
         this.contextRepository = contextRepository;
+        this.taskTagRepository = taskTagRepository;
+        this.tagRepository = tagRepository;
     }
 
     @Override
@@ -151,6 +160,51 @@ public class TaskServiceImpl implements TaskService {
             throw new ResourceNotFoundException("Task not found");
         }
         logger.info("Deleted task with id: {}", id);
+    }
+
+    @Override
+    public void addTagToTask(Long userId, Long taskId, Long tagId) {
+        logger.info("Adding tag {} to task {} for user {}", tagId, taskId, userId);
+        Task task = taskRepository.findById(taskId)
+                .orElseThrow(() -> new ResourceNotFoundException("Task not found"));
+        if (!task.userId().equals(userId)) {
+            throw new ResourceNotFoundException("Task not found");
+        }
+
+        org.gk.gtdservice.model.Tag tag = tagRepository.findById(tagId)
+                .orElseThrow(() -> new ResourceNotFoundException("Tag not found"));
+        if (!tag.userId().equals(userId)) {
+            throw new ResourceNotFoundException("Tag not found");
+        }
+
+        taskTagRepository.addTagToTask(taskId, tagId);
+    }
+
+    @Override
+    public void removeTagFromTask(Long userId, Long taskId, Long tagId) {
+        logger.info("Removing tag {} from task {} for user {}", tagId, taskId, userId);
+        Task task = taskRepository.findById(taskId)
+                .orElseThrow(() -> new ResourceNotFoundException("Task not found"));
+        if (!task.userId().equals(userId)) {
+            throw new ResourceNotFoundException("Task not found");
+        }
+
+        taskTagRepository.removeTagFromTask(taskId, tagId);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<TagDto> getTagsForTask(Long userId, Long taskId) {
+        logger.info("Getting tags for task {} for user {}", taskId, userId);
+        Task task = taskRepository.findById(taskId)
+                .orElseThrow(() -> new ResourceNotFoundException("Task not found"));
+        if (!task.userId().equals(userId)) {
+            throw new ResourceNotFoundException("Task not found");
+        }
+
+        return taskTagRepository.findTagsByTaskId(taskId).stream()
+                .map(TagMapper::toDto)
+                .collect(Collectors.toList());
     }
 
     private void validateUserExists(Long userId) {

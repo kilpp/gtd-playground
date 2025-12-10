@@ -24,4 +24,10 @@ public interface TaskService {
     TaskDto update(Long id, CreateTaskDto dto);
     
     void delete(Long id);
+
+    void addTagToTask(Long userId, Long taskId, Long tagId);
+
+    void removeTagFromTask(Long userId, Long taskId, Long tagId);
+
+    List<org.gk.gtdservice.dto.TagDto> getTagsForTask(Long userId, Long taskId);
 }

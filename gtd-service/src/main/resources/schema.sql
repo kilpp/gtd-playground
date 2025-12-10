@@ -92,3 +92,12 @@ CREATE TABLE IF NOT EXISTS gtd.tags
     CONSTRAINT fk_tag_user FOREIGN KEY (user_id) REFERENCES gtd.users (id),
     CONSTRAINT uq_tag_user_name UNIQUE (user_id, name)
 );
+
+CREATE TABLE IF NOT EXISTS gtd.task_tags
+(
+    task_id BIGINT NOT NULL,
+    tag_id  BIGINT NOT NULL,
+    PRIMARY KEY (task_id, tag_id),
+    CONSTRAINT fk_task_tags_task FOREIGN KEY (task_id) REFERENCES gtd.tasks (id) ON DELETE CASCADE,
+    CONSTRAINT fk_task_tags_tag FOREIGN KEY (tag_id) REFERENCES gtd.tags (id) ON DELETE CASCADE
+);

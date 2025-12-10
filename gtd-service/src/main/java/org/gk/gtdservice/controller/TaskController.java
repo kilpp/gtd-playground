@@ -2,6 +2,7 @@ package org.gk.gtdservice.controller;
 
 import jakarta.validation.Valid;
 import org.gk.gtdservice.dto.CreateTaskDto;
+import org.gk.gtdservice.dto.TagDto;
 import org.gk.gtdservice.dto.TaskDto;
 import org.gk.gtdservice.service.TaskService;
 import org.slf4j.Logger;
@@ -75,5 +76,25 @@ public class TaskController {
         taskService.delete(id);
         logger.info("Deleted task with id: {}", id);
         return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/{taskId}/tags/{tagId}")
+    public ResponseEntity<Void> addTag(@PathVariable Long taskId, @PathVariable Long tagId, @RequestParam Long userId) {
+        logger.info("Adding tag {} to task {} for user {}", tagId, taskId, userId);
+        taskService.addTagToTask(userId, taskId, tagId);
+        return ResponseEntity.ok().build();
+    }
+
+    @DeleteMapping("/{taskId}/tags/{tagId}")
+    public ResponseEntity<Void> removeTag(@PathVariable Long taskId, @PathVariable Long tagId, @RequestParam Long userId) {
+        logger.info("Removing tag {} from task {} for user {}", tagId, taskId, userId);
+        taskService.removeTagFromTask(userId, taskId, tagId);
+        return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/{taskId}/tags")
+    public List<TagDto> getTags(@PathVariable Long taskId, @RequestParam Long userId) {
+        logger.info("Getting tags for task {} for user {}", taskId, userId);
+        return taskService.getTagsForTask(userId, taskId);
     }
 }
