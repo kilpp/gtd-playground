@@ -98,6 +98,18 @@ CREATE TABLE IF NOT EXISTS gtd.task_tags
     task_id BIGINT NOT NULL,
     tag_id  BIGINT NOT NULL,
     PRIMARY KEY (task_id, tag_id),
-    CONSTRAINT fk_task_tags_task FOREIGN KEY (task_id) REFERENCES gtd.tasks (id) ON DELETE CASCADE,
-    CONSTRAINT fk_task_tags_tag FOREIGN KEY (tag_id) REFERENCES gtd.tags (id) ON DELETE CASCADE
+    CONSTRAINT fk_task_tag_task FOREIGN KEY (task_id) REFERENCES gtd.tasks (id) ON DELETE CASCADE,
+    CONSTRAINT fk_task_tag_tag FOREIGN KEY (tag_id) REFERENCES gtd.tags (id) ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS gtd.references_store
+(
+    id         BIGINT AUTO_INCREMENT PRIMARY KEY,
+    user_id    BIGINT NOT NULL,
+    title      VARCHAR(200) NOT NULL,
+    body       TEXT,
+    url        VARCHAR(500),
+    file_hint  VARCHAR(500),
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_reference_user FOREIGN KEY (user_id) REFERENCES gtd.users (id)
 );
