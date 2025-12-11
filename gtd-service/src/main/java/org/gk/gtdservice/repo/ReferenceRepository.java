@@ -71,7 +71,7 @@ public class ReferenceRepository {
                 .addValue("fileHint", dto.fileHint())
                 .addValue("createdAt", java.sql.Timestamp.from(now));
 
-        jdbc.update(sql, params, keyHolder);
+        jdbc.update(sql, params, keyHolder, new String[]{"id"});
         Number key = keyHolder.getKey();
         if (key == null) {
             throw new DataIntegrityViolationException("Failed to retrieve generated key for reference");
