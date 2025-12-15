@@ -91,4 +91,44 @@ class UserRepositoryTest {
         assertTrue(users.stream().anyMatch(u -> u.id().equals(user1.id())));
         assertTrue(users.stream().anyMatch(u -> u.id().equals(user2.id())));
     }
+
+    @Test
+    void update_ExistingUser_ShouldUpdateAndReturnUser() {
+        User created = userRepository.create(createUserDto);
+        CreateUserDto updateDto = new CreateUserDto("updateduser", "updated@example.com", "Updated User");
+
+        User updated = userRepository.update(created.id(), updateDto);
+
+        assertNotNull(updated);
+        assertEquals(created.id(), updated.id());
+        assertEquals(updateDto.username(), updated.username());
+        assertEquals(updateDto.email(), updated.email());
+        assertEquals(updateDto.name(), updated.name());
+    }
+
+    @Test
+    void update_NonExistingUser_ShouldReturnNull() {
+        CreateUserDto updateDto = new CreateUserDto("updateduser", "updated@example.com", "Updated User");
+
+        User updated = userRepository.update(999L, updateDto);
+
+        assertNull(updated);
+    }
+
+    @Test
+    void delete_ExistingUser_ShouldReturnTrue() {
+        User created = userRepository.create(createUserDto);
+
+        boolean deleted = userRepository.delete(created.id());
+
+        assertTrue(deleted);
+        assertTrue(userRepository.findById(created.id()).isEmpty());
+    }
+
+    @Test
+    void delete_NonExistingUser_ShouldReturnFalse() {
+        boolean deleted = userRepository.delete(999L);
+
+        assertFalse(deleted);
+    }
 }
