@@ -3,12 +3,7 @@ package org.gk.gtdservice.controller;
 import org.gk.gtdservice.dto.CreateProjectDto;
 import org.gk.gtdservice.dto.ProjectDto;
 import org.gk.gtdservice.exception.ResourceNotFoundException;
-import org.gk.gtdservice.model.Area;
-import org.gk.gtdservice.model.Project;
-import org.gk.gtdservice.model.User;
-import org.gk.gtdservice.repo.AreaRepository;
-import org.gk.gtdservice.repo.ProjectRepository;
-import org.gk.gtdservice.repo.UserRepository;
+import org.gk.gtdservice.service.ProjectService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -21,37 +16,27 @@ import org.springframework.http.ResponseEntity;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
-import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.when;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class ProjectControllerTest {
 
     @Mock
-    private ProjectRepository projectRepository;
-
-    @Mock
-    private UserRepository userRepository;
-
-    @Mock
-    private AreaRepository areaRepository;
+    private ProjectService service;
 
     @InjectMocks
     private ProjectController projectController;
 
-    private Project testProject;
+    private ProjectDto testProjectDto;
     private CreateProjectDto createProjectDto;
-    private User testUser;
-    private Area testArea;
 
     @BeforeEach
     void setUp() {
-        testUser = new User(1L, "testuser", "test@example.com", "Test User", Instant.now());
-        testArea = new Area(2L, 1L, "Work", "Work area", Instant.now());
-        testProject = new Project(
+        testProjectDto = new ProjectDto(
                 1L,
                 1L,
                 2L,
@@ -76,76 +61,74 @@ class ProjectControllerTest {
 
     @Test
     void list_AllProjects_ShouldReturnAllProjects() {
-        when(projectRepository.findAll()).thenReturn(List.of(testProject));
+        when(service.findAll()).thenReturn(List.of(testProjectDto));
 
         List<ProjectDto> result = projectController.list(null, null, null);
 
         assertNotNull(result);
         assertEquals(1, result.size());
-        assertEquals(testProject.title(), result.get(0).title());
+        assertEquals(testProjectDto.title(), result.get(0).title());
     }
 
     @Test
     void list_ProjectsByUserId_ShouldReturnProjectsForUser() {
-        when(projectRepository.findByUserId(1L)).thenReturn(List.of(testProject));
+        when(service.findByUserId(1L)).thenReturn(List.of(testProjectDto));
 
         List<ProjectDto> result = projectController.list(1L, null, null);
 
         assertNotNull(result);
         assertEquals(1, result.size());
-        assertEquals(testProject.title(), result.get(0).title());
+        assertEquals(testProjectDto.title(), result.get(0).title());
     }
 
     @Test
     void list_ProjectsByAreaId_ShouldReturnProjectsForArea() {
-        when(projectRepository.findByAreaId(2L)).thenReturn(List.of(testProject));
+        when(service.findByAreaId(2L)).thenReturn(List.of(testProjectDto));
 
         List<ProjectDto> result = projectController.list(null, 2L, null);
 
         assertNotNull(result);
         assertEquals(1, result.size());
-        assertEquals(testProject.title(), result.get(0).title());
+        assertEquals(testProjectDto.title(), result.get(0).title());
     }
 
     @Test
     void list_ProjectsByStatus_ShouldReturnProjectsWithStatus() {
-        when(projectRepository.findByStatus("active")).thenReturn(List.of(testProject));
+        when(service.findByStatus("active")).thenReturn(List.of(testProjectDto));
 
         List<ProjectDto> result = projectController.list(null, null, "active");
 
         assertNotNull(result);
         assertEquals(1, result.size());
-        assertEquals(testProject.title(), result.get(0).title());
+        assertEquals(testProjectDto.title(), result.get(0).title());
     }
 
     @Test
     void get_ExistingProject_ShouldReturnProject() {
-        when(projectRepository.findById(1L)).thenReturn(Optional.of(testProject));
+        when(service.findById(1L)).thenReturn(testProjectDto);
 
         ProjectDto result = projectController.get(1L);
 
         assertNotNull(result);
-        assertEquals(testProject.title(), result.title());
+        assertEquals(testProjectDto.title(), result.title());
     }
 
     @Test
     void get_NonExistingProject_ShouldThrowException() {
-        when(projectRepository.findById(1L)).thenReturn(Optional.empty());
+        when(service.findById(1L)).thenThrow(new ResourceNotFoundException("Project not found"));
 
         assertThrows(ResourceNotFoundException.class, () -> projectController.get(1L));
     }
 
     @Test
     void create_NewProject_ShouldReturnCreated() {
-        when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
-        when(areaRepository.findById(2L)).thenReturn(Optional.of(testArea));
-        when(projectRepository.create(any())).thenReturn(testProject);
+        when(service.create(any())).thenReturn(testProjectDto);
 
         ResponseEntity<ProjectDto> response = projectController.create(createProjectDto);
 
         assertEquals(HttpStatus.CREATED, response.getStatusCode());
         assertNotNull(response.getBody());
-        assertEquals(testProject.title(), response.getBody().title());
+        assertEquals(testProjectDto.title(), response.getBody().title());
     }
 
     @Test
@@ -159,7 +142,7 @@ class ProjectControllerTest {
                 "active",
                 null
         );
-        Project projectWithoutArea = new Project(
+        ProjectDto projectWithoutArea = new ProjectDto(
                 1L,
                 1L,
                 null,
@@ -171,8 +154,7 @@ class ProjectControllerTest {
                 Instant.now(),
                 null
         );
-        when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
-        when(projectRepository.create(any())).thenReturn(projectWithoutArea);
+        when(service.create(any())).thenReturn(projectWithoutArea);
 
         ResponseEntity<ProjectDto> response = projectController.create(dtoWithoutArea);
 
@@ -182,58 +164,52 @@ class ProjectControllerTest {
 
     @Test
     void create_NonExistingUser_ShouldThrowException() {
-        when(userRepository.findById(1L)).thenReturn(Optional.empty());
+        when(service.create(any())).thenThrow(new ResourceNotFoundException("User not found"));
 
         assertThrows(ResourceNotFoundException.class, () -> projectController.create(createProjectDto));
     }
 
     @Test
     void create_NonExistingArea_ShouldThrowException() {
-        when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
-        when(areaRepository.findById(2L)).thenReturn(Optional.empty());
+        when(service.create(any())).thenThrow(new ResourceNotFoundException("Area not found"));
 
         assertThrows(ResourceNotFoundException.class, () -> projectController.create(createProjectDto));
     }
 
     @Test
     void update_ExistingProject_ShouldReturnUpdated() {
-        when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
-        when(areaRepository.findById(2L)).thenReturn(Optional.of(testArea));
-        when(projectRepository.update(1L, createProjectDto)).thenReturn(testProject);
+        when(service.update(eq(1L), any())).thenReturn(testProjectDto);
 
         ProjectDto result = projectController.update(1L, createProjectDto);
 
         assertNotNull(result);
-        assertEquals(testProject.title(), result.title());
+        assertEquals(testProjectDto.title(), result.title());
     }
 
     @Test
     void update_NonExistingProject_ShouldThrowException() {
-        when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
-        when(areaRepository.findById(2L)).thenReturn(Optional.of(testArea));
-        when(projectRepository.update(1L, createProjectDto)).thenReturn(null);
+        when(service.update(eq(1L), any())).thenThrow(new ResourceNotFoundException("Project not found"));
 
         assertThrows(ResourceNotFoundException.class, () -> projectController.update(1L, createProjectDto));
     }
 
     @Test
     void update_NonExistingUser_ShouldThrowException() {
-        when(userRepository.findById(1L)).thenReturn(Optional.empty());
+        when(service.update(eq(1L), any())).thenThrow(new ResourceNotFoundException("User not found"));
 
         assertThrows(ResourceNotFoundException.class, () -> projectController.update(1L, createProjectDto));
     }
 
     @Test
     void update_NonExistingArea_ShouldThrowException() {
-        when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
-        when(areaRepository.findById(2L)).thenReturn(Optional.empty());
+        when(service.update(eq(1L), any())).thenThrow(new ResourceNotFoundException("Area not found"));
 
         assertThrows(ResourceNotFoundException.class, () -> projectController.update(1L, createProjectDto));
     }
 
     @Test
     void delete_ExistingProject_ShouldReturnNoContent() {
-        when(projectRepository.delete(1L)).thenReturn(true);
+        doNothing().when(service).delete(1L);
 
         ResponseEntity<Void> response = projectController.delete(1L);
 
@@ -242,7 +218,7 @@ class ProjectControllerTest {
 
     @Test
     void delete_NonExistingProject_ShouldThrowException() {
-        when(projectRepository.delete(1L)).thenReturn(false);
+        doThrow(new ResourceNotFoundException("Project not found")).when(service).delete(1L);
 
         assertThrows(ResourceNotFoundException.class, () -> projectController.delete(1L));
     }

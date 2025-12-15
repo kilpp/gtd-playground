@@ -3,10 +3,7 @@ package org.gk.gtdservice.controller;
 import org.gk.gtdservice.dto.ContextDto;
 import org.gk.gtdservice.dto.CreateContextDto;
 import org.gk.gtdservice.exception.ResourceNotFoundException;
-import org.gk.gtdservice.model.Context;
-import org.gk.gtdservice.model.User;
-import org.gk.gtdservice.repo.ContextRepository;
-import org.gk.gtdservice.repo.UserRepository;
+import org.gk.gtdservice.service.ContextService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -18,122 +15,114 @@ import org.springframework.http.ResponseEntity;
 
 import java.time.Instant;
 import java.util.List;
-import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.when;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class ContextControllerTest {
 
     @Mock
-    private ContextRepository contextRepository;
-
-    @Mock
-    private UserRepository userRepository;
+    private ContextService service;
 
     @InjectMocks
     private ContextController contextController;
 
-    private Context testContext;
+    private ContextDto testContextDto;
     private CreateContextDto createContextDto;
-    private User testUser;
 
     @BeforeEach
     void setUp() {
-        testUser = new User(1L, "testuser", "test@example.com", "Test User", Instant.now());
-        testContext = new Context(1L, 1L, "@Home", "Home context", true, Instant.now());
+        testContextDto = new ContextDto(1L, 1L, "@Home", "Home context", true, Instant.now());
         createContextDto = new CreateContextDto(1L, "@Home", "Home context", true);
     }
 
     @Test
     void list_AllContexts_ShouldReturnAllContexts() {
-        when(contextRepository.findAll()).thenReturn(List.of(testContext));
+        when(service.findAll()).thenReturn(List.of(testContextDto));
 
         List<ContextDto> result = contextController.list(null);
 
         assertNotNull(result);
         assertEquals(1, result.size());
-        assertEquals(testContext.name(), result.get(0).name());
+        assertEquals(testContextDto.name(), result.get(0).name());
     }
 
     @Test
     void list_ContextsByUserId_ShouldReturnContextsForUser() {
-        when(contextRepository.findByUserId(1L)).thenReturn(List.of(testContext));
+        when(service.findByUserId(1L)).thenReturn(List.of(testContextDto));
 
         List<ContextDto> result = contextController.list(1L);
 
         assertNotNull(result);
         assertEquals(1, result.size());
-        assertEquals(testContext.name(), result.get(0).name());
+        assertEquals(testContextDto.name(), result.get(0).name());
     }
 
     @Test
     void get_ExistingContext_ShouldReturnContext() {
-        when(contextRepository.findById(1L)).thenReturn(Optional.of(testContext));
+        when(service.findById(1L)).thenReturn(testContextDto);
 
         ContextDto result = contextController.get(1L);
 
         assertNotNull(result);
-        assertEquals(testContext.name(), result.name());
+        assertEquals(testContextDto.name(), result.name());
     }
 
     @Test
     void get_NonExistingContext_ShouldThrowException() {
-        when(contextRepository.findById(1L)).thenReturn(Optional.empty());
+        when(service.findById(1L)).thenThrow(new ResourceNotFoundException("Context not found"));
 
         assertThrows(ResourceNotFoundException.class, () -> contextController.get(1L));
     }
 
     @Test
     void create_NewContext_ShouldReturnCreated() {
-        when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
-        when(contextRepository.create(any())).thenReturn(testContext);
+        when(service.create(any())).thenReturn(testContextDto);
 
         ResponseEntity<ContextDto> response = contextController.create(createContextDto);
 
         assertEquals(HttpStatus.CREATED, response.getStatusCode());
         assertNotNull(response.getBody());
-        assertEquals(testContext.name(), response.getBody().name());
+        assertEquals(testContextDto.name(), response.getBody().name());
     }
 
     @Test
     void create_NonExistingUser_ShouldThrowException() {
-        when(userRepository.findById(1L)).thenReturn(Optional.empty());
+        when(service.create(any())).thenThrow(new ResourceNotFoundException("User not found"));
 
         assertThrows(ResourceNotFoundException.class, () -> contextController.create(createContextDto));
     }
 
     @Test
     void update_ExistingContext_ShouldReturnUpdated() {
-        when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
-        when(contextRepository.update(1L, createContextDto)).thenReturn(testContext);
+        when(service.update(eq(1L), any())).thenReturn(testContextDto);
 
         ContextDto result = contextController.update(1L, createContextDto);
 
         assertNotNull(result);
-        assertEquals(testContext.name(), result.name());
+        assertEquals(testContextDto.name(), result.name());
     }
 
     @Test
     void update_NonExistingContext_ShouldThrowException() {
-        when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
-        when(contextRepository.update(1L, createContextDto)).thenReturn(null);
+        when(service.update(eq(1L), any())).thenThrow(new ResourceNotFoundException("Context not found"));
 
         assertThrows(ResourceNotFoundException.class, () -> contextController.update(1L, createContextDto));
     }
 
     @Test
     void update_NonExistingUser_ShouldThrowException() {
-        when(userRepository.findById(1L)).thenReturn(Optional.empty());
+        when(service.update(eq(1L), any())).thenThrow(new ResourceNotFoundException("User not found"));
 
         assertThrows(ResourceNotFoundException.class, () -> contextController.update(1L, createContextDto));
     }
 
     @Test
     void delete_ExistingContext_ShouldReturnNoContent() {
-        when(contextRepository.delete(1L)).thenReturn(true);
+        doNothing().when(service).delete(1L);
 
         ResponseEntity<Void> response = contextController.delete(1L);
 
@@ -142,7 +131,7 @@ class ContextControllerTest {
 
     @Test
     void delete_NonExistingContext_ShouldThrowException() {
-        when(contextRepository.delete(1L)).thenReturn(false);
+        doThrow(new ResourceNotFoundException("Context not found")).when(service).delete(1L);
 
         assertThrows(ResourceNotFoundException.class, () -> contextController.delete(1L));
     }
