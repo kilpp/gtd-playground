@@ -6,6 +6,7 @@ import org.gk.gtdservice.dto.CreateContextDto;
 import org.gk.gtdservice.service.ContextService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.net.URI;
 import java.util.List;
@@ -37,7 +38,12 @@ public class ContextController {
     @PostMapping
     public ResponseEntity<ContextDto> create(@Valid @RequestBody CreateContextDto dto) {
         ContextDto created = service.create(dto);
-        return ResponseEntity.created(URI.create("/api/contexts/" + created.id())).body(created);
+        URI location = ServletUriComponentsBuilder
+                .fromCurrentRequest()
+                .path("/{id}")
+                .buildAndExpand(created.id())
+                .toUri();
+        return ResponseEntity.created(location).body(created);
     }
 
     @PutMapping("/{id}")

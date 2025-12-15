@@ -6,6 +6,7 @@ import org.gk.gtdservice.dto.TaskDependencyDto;
 import org.gk.gtdservice.service.TaskDependencyService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.net.URI;
 import java.util.List;
@@ -42,9 +43,12 @@ public class TaskDependencyController {
     @PostMapping
     public ResponseEntity<TaskDependencyDto> create(@Valid @RequestBody CreateTaskDependencyDto dto) {
         TaskDependencyDto created = service.create(dto);
-        return ResponseEntity.created(
-                URI.create("/api/task-dependencies/" + created.taskId() + "/" + created.dependsOnTaskId())
-        ).body(created);
+        URI location = ServletUriComponentsBuilder
+                .fromCurrentRequest()
+                .path("/{taskId}/{dependsOnTaskId}")
+                .buildAndExpand(created.taskId(), created.dependsOnTaskId())
+                .toUri();
+        return ResponseEntity.created(location).body(created);
     }
 
     @DeleteMapping("/{taskId}/{dependsOnTaskId}")

@@ -9,6 +9,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.net.URI;
 import java.util.List;
@@ -59,7 +60,12 @@ public class TaskController {
         logger.info("Creating task: {}", dto);
         TaskDto created = taskService.create(dto);
         logger.info("Created task with id: {}", created.id());
-        return ResponseEntity.created(URI.create("/api/tasks/" + created.id())).body(created);
+        URI location = ServletUriComponentsBuilder
+                .fromCurrentRequest()
+                .path("/{id}")
+                .buildAndExpand(created.id())
+                .toUri();
+        return ResponseEntity.created(location).body(created);
     }
 
     @PutMapping("/{id}")

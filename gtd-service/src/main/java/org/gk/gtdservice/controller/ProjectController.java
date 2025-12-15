@@ -6,6 +6,7 @@ import org.gk.gtdservice.dto.ProjectDto;
 import org.gk.gtdservice.service.ProjectService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.net.URI;
 import java.util.List;
@@ -45,7 +46,12 @@ public class ProjectController {
     @PostMapping
     public ResponseEntity<ProjectDto> create(@Valid @RequestBody CreateProjectDto dto) {
         ProjectDto created = service.create(dto);
-        return ResponseEntity.created(URI.create("/api/projects/" + created.id())).body(created);
+        URI location = ServletUriComponentsBuilder
+                .fromCurrentRequest()
+                .path("/{id}")
+                .buildAndExpand(created.id())
+                .toUri();
+        return ResponseEntity.created(location).body(created);
     }
 
     @PutMapping("/{id}")

@@ -12,6 +12,9 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
 import java.time.Instant;
 import java.time.LocalDate;
@@ -36,6 +39,9 @@ class ProjectControllerTest {
 
     @BeforeEach
     void setUp() {
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(request));
+
         testProjectDto = new ProjectDto(
                 1L,
                 1L,

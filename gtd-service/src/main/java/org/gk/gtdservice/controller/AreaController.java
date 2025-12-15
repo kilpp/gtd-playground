@@ -6,6 +6,7 @@ import org.gk.gtdservice.dto.CreateAreaDto;
 import org.gk.gtdservice.service.AreaService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.net.URI;
 import java.util.List;
@@ -37,7 +38,12 @@ public class AreaController {
     @PostMapping
     public ResponseEntity<AreaDto> create(@Valid @RequestBody CreateAreaDto dto) {
         AreaDto created = service.create(dto);
-        return ResponseEntity.created(URI.create("/api/areas/" + created.id())).body(created);
+        URI location = ServletUriComponentsBuilder
+                .fromCurrentRequest()
+                .path("/{id}")
+                .buildAndExpand(created.id())
+                .toUri();
+        return ResponseEntity.created(location).body(created);
     }
 
     @PutMapping("/{id}")

@@ -12,6 +12,9 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
 import java.time.Instant;
 import java.util.List;
@@ -35,6 +38,9 @@ class ContextControllerTest {
 
     @BeforeEach
     void setUp() {
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(request));
+
         testContextDto = new ContextDto(1L, 1L, "@Home", "Home context", true, Instant.now());
         createContextDto = new CreateContextDto(1L, "@Home", "Home context", true);
     }

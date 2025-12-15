@@ -12,6 +12,9 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
 import java.util.List;
 
@@ -33,6 +36,9 @@ class TaskDependencyControllerTest {
 
     @BeforeEach
     void setUp() {
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(request));
+
         testDependencyDto = new TaskDependencyDto(2L, 1L);
         createDependencyDto = new CreateTaskDependencyDto(2L, 1L);
     }

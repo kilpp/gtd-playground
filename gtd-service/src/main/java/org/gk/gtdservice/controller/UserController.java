@@ -6,6 +6,7 @@ import org.gk.gtdservice.dto.UserDto;
 import org.gk.gtdservice.service.UserService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.net.URI;
 import java.util.List;
@@ -33,7 +34,12 @@ public class UserController {
     @PostMapping
     public ResponseEntity<UserDto> create(@Valid @RequestBody CreateUserDto dto) {
         UserDto created = service.create(dto);
-        return ResponseEntity.created(URI.create("/api/users/" + created.id())).body(created);
+        URI location = ServletUriComponentsBuilder
+                .fromCurrentRequest()
+                .path("/{id}")
+                .buildAndExpand(created.id())
+                .toUri();
+        return ResponseEntity.created(location).body(created);
     }
 
     @PutMapping("/{id}")

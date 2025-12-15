@@ -6,6 +6,7 @@ import org.gk.gtdservice.dto.ReferenceDto;
 import org.gk.gtdservice.service.ReferenceService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.net.URI;
 import java.util.List;
@@ -37,7 +38,12 @@ public class ReferenceController {
     @PostMapping
     public ResponseEntity<ReferenceDto> create(@Valid @RequestBody CreateReferenceDto dto) {
         ReferenceDto created = service.create(dto);
-        return ResponseEntity.created(URI.create("/api/references/" + created.id()))
+        URI location = ServletUriComponentsBuilder
+                .fromCurrentRequest()
+                .path("/{id}")
+                .buildAndExpand(created.id())
+                .toUri();
+        return ResponseEntity.created(location)
                 .body(created);
     }
 
