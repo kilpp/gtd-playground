@@ -92,4 +92,12 @@ public class TaskDependencyServiceImpl implements TaskDependencyService {
             throw new ResourceNotFoundException("Task dependency not found");
         }
     }
+
+    @Override
+    public int deleteByTaskId(Long taskId) {
+        logger.info("Deleting all dependencies for taskId: {}", taskId);
+        int deleted = repository.deleteByTaskId(taskId);
+        logger.info("Deleted {} dependencies for taskId: {}", deleted, taskId);
+        return deleted;
+    }
 }

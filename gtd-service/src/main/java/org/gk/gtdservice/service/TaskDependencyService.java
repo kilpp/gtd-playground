@@ -12,4 +12,5 @@ public interface TaskDependencyService {
     TaskDependencyDto findById(Long taskId, Long dependsOnTaskId);
     TaskDependencyDto create(CreateTaskDependencyDto dto);
     void delete(Long taskId, Long dependsOnTaskId);
+    int deleteByTaskId(Long taskId);
 }

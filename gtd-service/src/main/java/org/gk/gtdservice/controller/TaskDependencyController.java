@@ -55,9 +55,7 @@ public class TaskDependencyController {
 
     @DeleteMapping("/task/{taskId}")
     public ResponseEntity<Void> deleteByTaskId(@PathVariable Long taskId) {
-        logger.info("Deleting all dependencies for taskId: {}", taskId);
-        int deleted = repository.deleteByTaskId(taskId);
-        logger.info("Deleted {} dependencies for taskId: {}", deleted, taskId);
+        service.deleteByTaskId(taskId);
         return ResponseEntity.noContent().build();
     }
 }
