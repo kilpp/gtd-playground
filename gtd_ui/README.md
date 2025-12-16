@@ -28,10 +28,29 @@ You can run the application on various platforms. Ensure you have the necessary 
 
 ### 📱 Android
 
-1.  **Set up an Android device**:
-    *   **Emulator**: Open Android Studio, go to Device Manager, and start a virtual device.
-    *   **Physical Device**: Enable Developer Options and USB Debugging on your phone, then connect it via USB.
-2.  **Run the app**:
+#### 1. Install Android Studio & SDK
+1.  Download and install [Android Studio](https://developer.android.com/studio).
+2.  Run the setup wizard. Ensure **Android SDK**, **Android SDK Platform-Tools**, and **Android Virtual Device** are selected.
+3.  **Important**: Install Command-line Tools & NDK.
+    *   Open Android Studio > **Settings** (or Preferences) > **Languages & Frameworks** > **Android SDK** > **SDK Tools**.
+    *   Check **Android SDK Command-line Tools (latest)** and **NDK (Side by side)**.
+    *   Click **Apply** to install.
+
+#### 2. Configure Flutter
+1.  Accept Android licenses:
+    ```bash
+    flutter doctor --android-licenses
+    ```
+    (Press `y` to accept all).
+2.  Verify setup:
+    ```bash
+    flutter doctor
+    ```
+
+#### 3. Run the App
+*   **Emulator**: Open Android Studio > **Device Manager** > Create/Start a virtual device.
+*   **Physical Device**: Enable **Developer Options** & **USB Debugging** on your phone, then connect via USB.
+*   **Run Command**:
     ```bash
     flutter run
     ```
@@ -93,3 +112,8 @@ You can run the application on various platforms. Ensure you have the necessary 
     ```bash
     sudo apt-get install g++-14 libstdc++-14-dev
     ```
+*   **Android License Error (sdkmanager not found)**:
+    If `flutter doctor --android-licenses` fails, open Android Studio > Settings > Languages & Frameworks > Android SDK > SDK Tools, and check **Android SDK Command-line Tools (latest)**. Then run the license command again.
+*   **Android NDK Error**:
+    *   **Missing NDK**: Install it via Android Studio > SDK Tools > **NDK (Side by side)**.
+    *   **Corrupted NDK ([CXX1101] ... did not have a source.properties file)**: Delete the corrupted NDK folder (e.g., `rm -rf ~/Android/Sdk/ndk/<version>`) and run `flutter run` again to let Gradle re-download it.
