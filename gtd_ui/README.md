@@ -87,3 +87,9 @@ You can run the application on various platforms. Ensure you have the necessary 
     flutter clean
     flutter pub get
     ```
+*   **Linux Build Error (cannot find -lstdc++)**:
+    If you see an error like `/usr/bin/ld: cannot find -lstdc++` or `CMake Error ... The C++ compiler ... is not able to compile a simple test program`, it means you are missing the C++ standard library development files for your GCC version (often GCC 14 on newer Ubuntu versions).
+    Fix it by running:
+    ```bash
+    sudo apt-get install g++-14 libstdc++-14-dev
+    ```
