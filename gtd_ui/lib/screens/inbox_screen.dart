@@ -4,7 +4,9 @@ import '../services/task_service.dart';
 import 'create_task_screen.dart';
 
 class InboxScreen extends StatefulWidget {
-  const InboxScreen({super.key});
+  final int userId;
+  
+  const InboxScreen({super.key, required this.userId});
 
   @override
   State<InboxScreen> createState() => _InboxScreenState();
@@ -65,7 +67,7 @@ class _InboxScreenState extends State<InboxScreen> {
         onPressed: () async {
           final result = await Navigator.of(context).push<bool>(
             MaterialPageRoute(
-              builder: (context) => const CreateTaskScreen(),
+              builder: (context) => CreateTaskScreen(userId: widget.userId),
             ),
           );
           // Refresh the list if a task was created

@@ -11,17 +11,12 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:gtd_ui/main.dart';
 
 void main() {
-  testWidgets('GTD app landing page test', (WidgetTester tester) async {
+  testWidgets('GTD app shows login screen', (WidgetTester tester) async {
     // Build our app and trigger a frame.
     await tester.pumpWidget(const GTDApp());
 
-    // Verify that the app title is displayed
-    expect(find.text('GTD'), findsWidgets);
-    expect(find.text('Getting Things Done'), findsOneWidget);
-
-    // Verify that the feature cards are displayed
-    expect(find.text('Inbox'), findsOneWidget);
-    expect(find.text('Projects'), findsOneWidget);
-    expect(find.text('Next Actions'), findsOneWidget);
+    // Verify that the login screen is displayed
+    expect(find.text('GTD - Select User'), findsOneWidget);
+    expect(find.byType(FloatingActionButton), findsOneWidget);
   });
 }

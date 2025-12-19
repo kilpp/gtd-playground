@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'screens/inbox_screen.dart';
+import 'screens/login_screen.dart';
 
 void main() {
   runApp(const GTDApp());
@@ -28,7 +28,7 @@ class GTDApp extends StatelessWidget {
         useMaterial3: true,
       ),
       themeMode: ThemeMode.system,
-      home: const LandingPage(),
+      home: const LoginScreen(),
     );
   }
 }
@@ -159,7 +159,7 @@ class LandingPage extends StatelessWidget {
                         onPressed: () {
                           Navigator.of(context).push(
                             MaterialPageRoute(
-                              builder: (context) => const InboxScreen(),
+                              builder: (context) => const LoginScreen(),
                             ),
                           );
                         },
@@ -229,11 +229,11 @@ class LandingPage extends StatelessWidget {
       elevation: 2,
       child: InkWell(
         onTap: () {
-          // Navigate to inbox screen when inbox card is tapped
+          // Navigate to login screen for all features now
           if (title == 'Inbox') {
             Navigator.of(context).push(
               MaterialPageRoute(
-                builder: (context) => const InboxScreen(),
+                builder: (context) => const LoginScreen(),
               ),
             );
           } else {

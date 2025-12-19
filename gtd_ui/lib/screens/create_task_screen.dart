@@ -7,7 +7,7 @@ class CreateTaskScreen extends StatefulWidget {
 
   const CreateTaskScreen({
     super.key,
-    this.userId = 1, // Default user ID - you can make this dynamic later
+    required this.userId,
   });
 
   @override
