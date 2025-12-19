@@ -36,7 +36,10 @@ public class TaskController {
         logger.info("Listing tasks with filters - userId: {}, projectId: {}, contextId: {}, status: {}", 
                    userId, projectId, contextId, status);
         
-        if (userId != null) {
+        // Support combined userId + status filtering
+        if (userId != null && status != null) {
+            return taskService.findByUserIdAndStatus(userId, status);
+        } else if (userId != null) {
             return taskService.findByUserId(userId);
         } else if (projectId != null) {
             return taskService.findByProjectId(projectId);

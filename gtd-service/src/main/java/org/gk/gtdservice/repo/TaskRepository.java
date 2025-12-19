@@ -128,6 +128,19 @@ public class TaskRepository {
         return tasks;
     }
 
+    public List<Task> findByUserIdAndStatus(Long userId, String status) {
+        logger.info("Finding tasks by userId: {} and status: {}", userId, status);
+        List<Task> tasks = jdbc.query(
+                "SELECT id, user_id, project_id, context_id, title, notes, status, priority, energy, " +
+                "duration_est_min, due_at, defer_until, waiting_on, waiting_since, created_at, completed_at, order_index " +
+                "FROM gtd.tasks WHERE user_id = :user_id AND status = :status ORDER BY order_index, created_at",
+                Map.of("user_id", userId, "status", status),
+                mapper
+        );
+        logger.debug("Found {} tasks for userId: {} with status: {}", tasks.size(), userId, status);
+        return tasks;
+    }
+
     public Optional<Task> findById(Long id) {
         logger.info("Finding task by id: {}", id);
         Map<String, Object> params = Map.of("id", id);

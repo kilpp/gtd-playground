@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'screens/inbox_screen.dart';
 
 void main() {
   runApp(const GTDApp());
@@ -156,10 +157,9 @@ class LandingPage extends StatelessWidget {
                     Center(
                       child: FilledButton.icon(
                         onPressed: () {
-                          // TODO: Navigate to main app
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Get Started - Coming soon!'),
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (context) => const InboxScreen(),
                             ),
                           );
                         },
@@ -229,9 +229,18 @@ class LandingPage extends StatelessWidget {
       elevation: 2,
       child: InkWell(
         onTap: () {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text('$title - Coming soon!')));
+          // Navigate to inbox screen when inbox card is tapped
+          if (title == 'Inbox') {
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (context) => const InboxScreen(),
+              ),
+            );
+          } else {
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(SnackBar(content: Text('$title - Coming soon!')));
+          }
         },
         borderRadius: BorderRadius.circular(12),
         child: Padding(

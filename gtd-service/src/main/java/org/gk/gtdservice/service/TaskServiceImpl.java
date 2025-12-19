@@ -92,6 +92,15 @@ public class TaskServiceImpl implements TaskService {
 
     @Override
     @Transactional(readOnly = true)
+    public List<TaskDto> findByUserIdAndStatus(Long userId, String status) {
+        logger.info("Finding tasks by userId: {} and status: {}", userId, status);
+        List<Task> tasks = taskRepository.findByUserIdAndStatus(userId, status);
+        logger.debug("Found {} tasks for userId: {} with status: {}", tasks.size(), userId, status);
+        return tasks.stream().map(TaskMapper::toDto).collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public TaskDto findById(Long id) {
         logger.info("Finding task by id: {}", id);
         return taskRepository.findById(id)

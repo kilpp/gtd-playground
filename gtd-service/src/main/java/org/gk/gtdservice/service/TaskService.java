@@ -17,6 +17,8 @@ public interface TaskService {
     
     List<TaskDto> findByStatus(String status);
     
+    List<TaskDto> findByUserIdAndStatus(Long userId, String status);
+    
     TaskDto findById(Long id);
     
     TaskDto create(CreateTaskDto dto);
