@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import '../models/task.dart';
 import '../services/task_service.dart';
+import '../services/auth_service.dart';
 import 'create_task_screen.dart';
+import 'login_screen.dart';
 
 class InboxScreen extends StatefulWidget {
   final int userId;
-  
+
   const InboxScreen({super.key, required this.userId});
 
   @override
@@ -14,6 +16,7 @@ class InboxScreen extends StatefulWidget {
 
 class _InboxScreenState extends State<InboxScreen> {
   final TaskService _taskService = TaskService();
+  final AuthService _authService = AuthService();
   List<Task> _tasks = [];
   bool _isLoading = false;
   String? _errorMessage;
@@ -45,6 +48,36 @@ class _InboxScreenState extends State<InboxScreen> {
     }
   }
 
+  Future<void> _logout() async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Logout'),
+        content: const Text('Are you sure you want to logout?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Logout'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      await _authService.logout();
+      if (mounted) {
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (context) => const LoginScreen()),
+          (route) => false,
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -59,6 +92,49 @@ class _InboxScreenState extends State<InboxScreen> {
             icon: const Icon(Icons.refresh),
             onPressed: _loadInboxTasks,
             tooltip: 'Refresh',
+          ),
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.account_circle),
+            tooltip: 'Account',
+            onSelected: (value) {
+              if (value == 'logout') {
+                _logout();
+              }
+            },
+            itemBuilder: (context) => [
+              PopupMenuItem(
+                value: 'user',
+                enabled: false,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      _authService.currentUser?.name ?? 'User',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    Text(
+                      _authService.currentUser?.email ?? '',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: colorScheme.onSurface.withValues(alpha: 0.6),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const PopupMenuDivider(),
+              const PopupMenuItem(
+                value: 'logout',
+                child: Row(
+                  children: [
+                    Icon(Icons.logout),
+                    SizedBox(width: 8),
+                    Text('Logout'),
+                  ],
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -82,9 +158,7 @@ class _InboxScreenState extends State<InboxScreen> {
 
   Widget _buildBody(ThemeData theme, ColorScheme colorScheme) {
     if (_isLoading) {
-      return const Center(
-        child: CircularProgressIndicator(),
-      );
+      return const Center(child: CircularProgressIndicator());
     }
 
     if (_errorMessage != null) {
@@ -94,11 +168,7 @@ class _InboxScreenState extends State<InboxScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(
-                Icons.error_outline,
-                size: 64,
-                color: colorScheme.error,
-              ),
+              Icon(Icons.error_outline, size: 64, color: colorScheme.error),
               const SizedBox(height: 16),
               Text(
                 'Error loading tasks',
@@ -137,10 +207,7 @@ class _InboxScreenState extends State<InboxScreen> {
                 color: colorScheme.primary.withValues(alpha: 0.3),
               ),
               const SizedBox(height: 16),
-              Text(
-                'Your inbox is empty',
-                style: theme.textTheme.titleLarge,
-              ),
+              Text('Your inbox is empty', style: theme.textTheme.titleLarge),
               const SizedBox(height: 8),
               Text(
                 'Capture tasks and ideas here to process later',
@@ -179,10 +246,7 @@ class _InboxScreenState extends State<InboxScreen> {
             color: colorScheme.primaryContainer,
             borderRadius: BorderRadius.circular(8),
           ),
-          child: Icon(
-            Icons.inbox,
-            color: colorScheme.primary,
-          ),
+          child: Icon(Icons.inbox, color: colorScheme.primary),
         ),
         title: Text(
           task.title,
@@ -221,16 +285,9 @@ class _InboxScreenState extends State<InboxScreen> {
                   const SizedBox(width: 8),
                 ],
                 if (task.energy != null) ...[
-                  Icon(
-                    Icons.bolt,
-                    size: 16,
-                    color: colorScheme.secondary,
-                  ),
+                  Icon(Icons.bolt, size: 16, color: colorScheme.secondary),
                   const SizedBox(width: 4),
-                  Text(
-                    '${task.energy}',
-                    style: theme.textTheme.bodySmall,
-                  ),
+                  Text('${task.energy}', style: theme.textTheme.bodySmall),
                   const SizedBox(width: 8),
                 ],
                 if (task.durationEstMin != null) ...[
@@ -259,11 +316,7 @@ class _InboxScreenState extends State<InboxScreen> {
             const PopupMenuItem(
               value: 'edit',
               child: Row(
-                children: [
-                  Icon(Icons.edit),
-                  SizedBox(width: 8),
-                  Text('Edit'),
-                ],
+                children: [Icon(Icons.edit), SizedBox(width: 8), Text('Edit')],
               ),
             ),
             const PopupMenuItem(
@@ -327,16 +380,16 @@ class _InboxScreenState extends State<InboxScreen> {
       try {
         await _taskService.deleteTask(task.id);
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Task deleted')),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(const SnackBar(content: Text('Task deleted')));
           _loadInboxTasks();
         }
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Error deleting task: $e')),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('Error deleting task: $e')));
         }
       }
     }

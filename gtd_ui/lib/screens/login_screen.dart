@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import '../models/user.dart';
-import '../services/user_service.dart';
+import '../services/auth_service.dart';
 import 'inbox_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -11,62 +10,116 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final UserService _userService = UserService();
-  List<User> _users = [];
-  bool _isLoading = false;
-  String? _errorMessage;
-  bool _showCreateForm = false;
-
+  final AuthService _authService = AuthService();
   final _formKey = GlobalKey<FormState>();
+  final _identifierController = TextEditingController();
   final _usernameController = TextEditingController();
   final _emailController = TextEditingController();
   final _nameController = TextEditingController();
 
+  bool _isLoading = false;
+  bool _showSignUp = false;
+  String? _errorMessage;
+
   @override
   void initState() {
     super.initState();
-    _loadUsers();
+    _checkExistingSession();
   }
 
   @override
   void dispose() {
+    _identifierController.dispose();
     _usernameController.dispose();
     _emailController.dispose();
     _nameController.dispose();
     super.dispose();
   }
 
-  Future<void> _loadUsers() async {
+  Future<void> _checkExistingSession() async {
+    setState(() => _isLoading = true);
+
+    final isLoggedIn = await _authService.initialize();
+
+    if (isLoggedIn && _authService.currentUser != null && mounted) {
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (context) =>
+              InboxScreen(userId: _authService.currentUser!.id),
+        ),
+      );
+    } else {
+      setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _signInWithGoogle() async {
     setState(() {
       _isLoading = true;
       _errorMessage = null;
     });
 
     try {
-      final users = await _userService.getAllUsers();
-      setState(() {
-        _users = users;
-        _isLoading = false;
-      });
+      final user = await _authService.signInWithGoogle();
+
+      if (user != null && mounted) {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (context) => InboxScreen(userId: user.id)),
+        );
+      } else {
+        setState(() {
+          _isLoading = false;
+          _errorMessage = 'Sign in cancelled';
+        });
+      }
     } catch (e) {
       setState(() {
-        _errorMessage = e.toString();
         _isLoading = false;
+        _errorMessage = e.toString();
       });
     }
   }
 
-  Future<void> _createUser() async {
+  Future<void> _signInWithCredentials() async {
     if (!_formKey.currentState!.validate()) {
       return;
     }
 
     setState(() {
       _isLoading = true;
+      _errorMessage = null;
     });
 
     try {
-      final newUser = await _userService.createUser(
+      final user = await _authService.signInWithCredentials(
+        _identifierController.text.trim(),
+      );
+
+      if (user != null && mounted) {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (context) => InboxScreen(userId: user.id)),
+        );
+      }
+    } catch (e) {
+      setState(() {
+        _isLoading = false;
+        _errorMessage = e.toString();
+      });
+    }
+  }
+
+  Future<void> _signUp() async {
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      final user = await _authService.createAccount(
         username: _usernameController.text.trim(),
         email: _emailController.text.trim(),
         name: _nameController.text.trim().isEmpty
@@ -75,210 +128,267 @@ class _LoginScreenState extends State<LoginScreen> {
       );
 
       if (mounted) {
-        _usernameController.clear();
-        _emailController.clear();
-        _nameController.clear();
-        setState(() {
-          _showCreateForm = false;
-        });
-        _loadUsers();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('User ${newUser.username} created!'),
-            backgroundColor: Colors.green,
-          ),
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (context) => InboxScreen(userId: user.id)),
         );
       }
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error creating user: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-        setState(() {
-          _isLoading = false;
-        });
-      }
+      setState(() {
+        _isLoading = false;
+        _errorMessage = e.toString();
+      });
     }
-  }
-
-  void _loginAsUser(User user) {
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(
-        builder: (context) => InboxScreen(userId: user.id),
-      ),
-    );
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final size = MediaQuery.of(context).size;
+
+    if (_isLoading) {
+      return Scaffold(
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const CircularProgressIndicator(),
+              const SizedBox(height: 16),
+              Text(
+                'Loading...',
+                style: theme.textTheme.bodyLarge?.copyWith(
+                  color: colorScheme.onSurface.withValues(alpha: 0.6),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('GTD - Select User'),
-        backgroundColor: colorScheme.primaryContainer,
-      ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _showCreateForm
-              ? _buildCreateUserForm(theme, colorScheme)
-              : _buildUserList(theme, colorScheme),
-      floatingActionButton: _showCreateForm
-          ? null
-          : FloatingActionButton.extended(
-              onPressed: () {
-                setState(() {
-                  _showCreateForm = true;
-                });
-              },
-              icon: const Icon(Icons.person_add),
-              label: const Text('Create User'),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              colorScheme.primaryContainer,
+              colorScheme.secondaryContainer,
+            ],
+          ),
+        ),
+        child: SafeArea(
+          child: Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(24.0),
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxWidth: size.width > 600 ? 400 : double.infinity,
+                ),
+                child: Card(
+                  elevation: 8,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(32.0),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        // Logo and Title
+                        Icon(
+                          Icons.check_circle_outline,
+                          size: 64,
+                          color: colorScheme.primary,
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          'GTD',
+                          textAlign: TextAlign.center,
+                          style: theme.textTheme.headlineLarge?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: colorScheme.primary,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Getting Things Done',
+                          textAlign: TextAlign.center,
+                          style: theme.textTheme.bodyLarge?.copyWith(
+                            color: colorScheme.onSurface.withValues(alpha: 0.6),
+                          ),
+                        ),
+                        const SizedBox(height: 32),
+
+                        // Error Message
+                        if (_errorMessage != null) ...[
+                          Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: colorScheme.errorContainer,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(
+                                  Icons.error_outline,
+                                  color: colorScheme.error,
+                                  size: 20,
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    _errorMessage!,
+                                    style: TextStyle(
+                                      color: colorScheme.error,
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                        ],
+
+                        // Sign In / Sign Up Form
+                        _showSignUp
+                            ? _buildSignUpForm(theme)
+                            : _buildSignInForm(theme),
+
+                        const SizedBox(height: 24),
+
+                        // Divider
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Divider(color: colorScheme.outline),
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                              ),
+                              child: Text(
+                                'OR',
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: colorScheme.onSurface.withValues(
+                                    alpha: 0.6,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            Expanded(
+                              child: Divider(color: colorScheme.outline),
+                            ),
+                          ],
+                        ),
+
+                        const SizedBox(height: 24),
+
+                        // Google Sign In Button
+                        OutlinedButton.icon(
+                          onPressed: _signInWithGoogle,
+                          icon: const Icon(Icons.g_mobiledata, size: 28),
+                          label: const Text('Continue with Google'),
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            side: BorderSide(color: colorScheme.outline),
+                          ),
+                        ),
+
+                        const SizedBox(height: 16),
+
+                        // Toggle Sign In / Sign Up
+                        TextButton(
+                          onPressed: () {
+                            setState(() {
+                              _showSignUp = !_showSignUp;
+                              _errorMessage = null;
+                              _formKey.currentState?.reset();
+                            });
+                          },
+                          child: Text(
+                            _showSignUp
+                                ? 'Already have an account? Sign In'
+                                : 'Don\'t have an account? Sign Up',
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
             ),
+          ),
+        ),
+      ),
     );
   }
 
-  Widget _buildUserList(ThemeData theme, ColorScheme colorScheme) {
-    if (_errorMessage != null) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.error_outline, size: 64, color: colorScheme.error),
-              const SizedBox(height: 16),
-              Text(
-                'Error loading users',
-                style: theme.textTheme.titleLarge?.copyWith(
-                  color: colorScheme.error,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                _errorMessage!,
-                textAlign: TextAlign.center,
-                style: theme.textTheme.bodyMedium,
-              ),
-              const SizedBox(height: 24),
-              FilledButton.icon(
-                onPressed: _loadUsers,
-                icon: const Icon(Icons.refresh),
-                label: const Text('Retry'),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-
-    if (_users.isEmpty) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                Icons.people_outline,
-                size: 80,
-                color: colorScheme.primary.withValues(alpha: 0.3),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'No users found',
-                style: theme.textTheme.titleLarge,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Create a user to get started',
-                textAlign: TextAlign.center,
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: colorScheme.onSurface.withValues(alpha: 0.7),
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-
-    return RefreshIndicator(
-      onRefresh: _loadUsers,
-      child: ListView(
-        padding: const EdgeInsets.all(16.0),
+  Widget _buildSignInForm(ThemeData theme) {
+    return Form(
+      key: _formKey,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Padding(
-            padding: const EdgeInsets.only(bottom: 16.0),
-            child: Text(
-              'Select a user to continue',
-              style: theme.textTheme.titleMedium?.copyWith(
-                color: colorScheme.onSurface.withValues(alpha: 0.7),
+          TextFormField(
+            controller: _identifierController,
+            decoration: InputDecoration(
+              labelText: 'Username or Email',
+              prefixIcon: const Icon(Icons.person_outline),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
               ),
             ),
+            validator: (value) {
+              if (value == null || value.trim().isEmpty) {
+                return 'Please enter your username or email';
+              }
+              return null;
+            },
           ),
-          ..._users.map((user) => Card(
-                margin: const EdgeInsets.only(bottom: 8.0),
-                child: ListTile(
-                  leading: CircleAvatar(
-                    backgroundColor: colorScheme.primaryContainer,
-                    child: Text(
-                      user.name.isNotEmpty ? user.name[0].toUpperCase() : 'U',
-                      style: TextStyle(
-                        color: colorScheme.primary,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                  title: Text(
-                    user.name,
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  subtitle: Text('@${user.username}'),
-                  trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-                  onTap: () => _loginAsUser(user),
-                ),
-              )),
+          const SizedBox(height: 24),
+          FilledButton(
+            onPressed: _signInWithCredentials,
+            style: FilledButton.styleFrom(
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            child: const Text('Sign In'),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildCreateUserForm(ThemeData theme, ColorScheme colorScheme) {
+  Widget _buildSignUpForm(ThemeData theme) {
     return Form(
       key: _formKey,
-      child: ListView(
-        padding: const EdgeInsets.all(16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(
-            'Create New User',
-            style: theme.textTheme.headlineSmall?.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 24),
           TextFormField(
             controller: _usernameController,
             decoration: InputDecoration(
-              labelText: 'Username *',
-              hintText: 'Enter username',
-              border: const OutlineInputBorder(),
-              prefixIcon: const Icon(Icons.person),
-              filled: true,
-              fillColor: colorScheme.surface,
+              labelText: 'Username',
+              prefixIcon: const Icon(Icons.person_outline),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
             ),
-            maxLength: 50,
             validator: (value) {
               if (value == null || value.trim().isEmpty) {
-                return 'Username is required';
+                return 'Please enter a username';
               }
-              if (value.contains(' ')) {
-                return 'Username cannot contain spaces';
+              if (value.trim().length < 3) {
+                return 'Username must be at least 3 characters';
               }
               return null;
             },
@@ -287,21 +397,19 @@ class _LoginScreenState extends State<LoginScreen> {
           TextFormField(
             controller: _emailController,
             decoration: InputDecoration(
-              labelText: 'Email *',
-              hintText: 'your.email@example.com',
-              border: const OutlineInputBorder(),
-              prefixIcon: const Icon(Icons.email),
-              filled: true,
-              fillColor: colorScheme.surface,
+              labelText: 'Email',
+              prefixIcon: const Icon(Icons.email_outlined),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
             ),
-            maxLength: 100,
             keyboardType: TextInputType.emailAddress,
             validator: (value) {
               if (value == null || value.trim().isEmpty) {
-                return 'Email is required';
+                return 'Please enter your email';
               }
-              if (!value.contains('@') || !value.contains('.')) {
-                return 'Enter a valid email';
+              if (!value.contains('@')) {
+                return 'Please enter a valid email';
               }
               return null;
             },
@@ -310,41 +418,23 @@ class _LoginScreenState extends State<LoginScreen> {
           TextFormField(
             controller: _nameController,
             decoration: InputDecoration(
-              labelText: 'Display Name',
-              hintText: 'Your name (optional)',
-              border: const OutlineInputBorder(),
-              prefixIcon: const Icon(Icons.badge),
-              filled: true,
-              fillColor: colorScheme.surface,
+              labelText: 'Full Name (Optional)',
+              prefixIcon: const Icon(Icons.badge_outlined),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
             ),
-            maxLength: 100,
-            textCapitalization: TextCapitalization.words,
           ),
           const SizedBox(height: 24),
-          FilledButton.icon(
-            onPressed: _isLoading ? null : _createUser,
-            icon: const Icon(Icons.check),
-            label: const Text('Create User'),
+          FilledButton(
+            onPressed: _signUp,
             style: FilledButton.styleFrom(
               padding: const EdgeInsets.symmetric(vertical: 16),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
             ),
-          ),
-          const SizedBox(height: 12),
-          OutlinedButton(
-            onPressed: _isLoading
-                ? null
-                : () {
-                    setState(() {
-                      _showCreateForm = false;
-                      _usernameController.clear();
-                      _emailController.clear();
-                      _nameController.clear();
-                    });
-                  },
-            style: OutlinedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(vertical: 16),
-            ),
-            child: const Text('Cancel'),
+            child: const Text('Sign Up'),
           ),
         ],
       ),

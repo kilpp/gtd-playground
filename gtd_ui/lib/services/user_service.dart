@@ -67,4 +67,23 @@ class UserService {
       throw Exception('Error creating user: $e');
     }
   }
+
+  Future<User?> login({String? username, String? email}) async {
+    try {
+      final users = await getAllUsers();
+      
+      // Find user by username or email
+      for (var user in users) {
+        if ((username != null && user.username == username) ||
+            (email != null && user.email == email)) {
+          return user;
+        }
+      }
+      
+      return null;
+    } catch (e) {
+      throw Exception('Error during login: $e');
+    }
+  }
 }
+
