@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/task.dart';
 import '../services/task_service.dart';
-import '../services/auth_service.dart';
+import '../services/auth_service_factory.dart';
 import 'create_task_screen.dart';
 import 'login_screen.dart';
 
@@ -16,7 +16,7 @@ class InboxScreen extends StatefulWidget {
 
 class _InboxScreenState extends State<InboxScreen> {
   final TaskService _taskService = TaskService();
-  final AuthService _authService = AuthService();
+  final dynamic _authService = AuthServiceFactory.getAuthService();
   List<Task> _tasks = [];
   bool _isLoading = false;
   String? _errorMessage;

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../services/auth_service.dart';
+import '../services/auth_service_factory.dart';
 import 'login_screen.dart';
 import 'inbox_screen.dart';
 
@@ -11,7 +11,7 @@ class SplashScreen extends StatefulWidget {
 }
 
 class _SplashScreenState extends State<SplashScreen> {
-  final AuthService _authService = AuthService();
+  final dynamic _authService = AuthServiceFactory.getAuthService();
 
   @override
   void initState() {

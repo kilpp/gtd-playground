@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../services/auth_service.dart';
+import '../services/auth_service_factory.dart';
 import 'inbox_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -10,7 +10,7 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final AuthService _authService = AuthService();
+  final dynamic _authService = AuthServiceFactory.getAuthService();
   final _formKey = GlobalKey<FormState>();
   final _identifierController = TextEditingController();
   final _usernameController = TextEditingController();
