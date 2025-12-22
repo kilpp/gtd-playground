@@ -25,9 +25,29 @@ class TaskService {
     }
   }
 
-  /// Fetches all tasks in the inbox
-  Future<List<Task>> getInboxTasks() async {
-    return getTasksByStatus('inbox');
+  /// Fetches all tasks in the inbox for a specific user
+  Future<List<Task>> getInboxTasks({int? userId}) async {
+    try {
+      final queryParams = <String, String>{'status': 'inbox'};
+      if (userId != null) {
+        queryParams['userId'] = userId.toString();
+      }
+      
+      final uri = Uri.parse(baseUrl).replace(queryParameters: queryParams);
+      final response = await http.get(
+        uri,
+        headers: {'Content-Type': 'application/json'},
+      );
+
+      if (response.statusCode == 200) {
+        final List<dynamic> jsonList = json.decode(response.body) as List;
+        return jsonList.map((json) => Task.fromJson(json as Map<String, dynamic>)).toList();
+      } else {
+        throw Exception('Failed to load tasks: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Error fetching tasks: $e');
+    }
   }
 
   /// Fetches all tasks for a specific user

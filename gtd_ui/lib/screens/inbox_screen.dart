@@ -4,6 +4,7 @@ import '../services/task_service.dart';
 import '../services/auth_service_factory.dart';
 import 'create_task_screen.dart';
 import 'login_screen.dart';
+import 'contexts_screen.dart';
 
 class InboxScreen extends StatefulWidget {
   final int userId;
@@ -34,8 +35,8 @@ class _InboxScreenState extends State<InboxScreen> {
     });
 
     try {
-      print(" Loading inbox tasks...");
-      final tasks = await _taskService.getInboxTasks();
+      print(" Loading inbox tasks for user ${widget.userId}...");
+      final tasks = await _taskService.getInboxTasks(userId: widget.userId);
       setState(() {
         _tasks = tasks;
         _isLoading = false;
@@ -138,6 +139,7 @@ class _InboxScreenState extends State<InboxScreen> {
           ),
         ],
       ),
+      drawer: _buildDrawer(theme, colorScheme),
       body: _buildBody(theme, colorScheme),
       floatingActionButton: FloatingActionButton(
         onPressed: () async {
@@ -152,6 +154,92 @@ class _InboxScreenState extends State<InboxScreen> {
           }
         },
         child: const Icon(Icons.add),
+      ),
+    );
+  }
+
+  Widget _buildDrawer(ThemeData theme, ColorScheme colorScheme) {
+    return Drawer(
+      child: ListView(
+        padding: EdgeInsets.zero,
+        children: [
+          DrawerHeader(
+            decoration: BoxDecoration(color: colorScheme.primaryContainer),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                Icon(
+                  Icons.checklist_rounded,
+                  size: 48,
+                  color: colorScheme.primary,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'GTD',
+                  style: theme.textTheme.headlineSmall?.copyWith(
+                    color: colorScheme.onPrimaryContainer,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                Text(
+                  'Getting Things Done',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: colorScheme.onPrimaryContainer.withValues(
+                      alpha: 0.7,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          ListTile(
+            leading: const Icon(Icons.inbox),
+            title: const Text('Inbox'),
+            selected: true,
+            selectedTileColor: colorScheme.primaryContainer.withValues(
+              alpha: 0.3,
+            ),
+            onTap: () {
+              Navigator.pop(context); // Close drawer
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.place),
+            title: const Text('Contexts'),
+            onTap: () {
+              Navigator.pop(context); // Close drawer
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => ContextsScreen(userId: widget.userId),
+                ),
+              );
+            },
+          ),
+          const Divider(),
+          ListTile(
+            leading: const Icon(Icons.folder_outlined),
+            title: const Text('Projects'),
+            enabled: false,
+            onTap: () {
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Projects - Coming soon')),
+              );
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.label_outline),
+            title: const Text('Labels'),
+            enabled: false,
+            onTap: () {
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Labels - Coming soon')),
+              );
+            },
+          ),
+        ],
       ),
     );
   }
