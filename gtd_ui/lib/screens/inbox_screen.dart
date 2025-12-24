@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/task.dart';
 import '../services/task_service.dart';
 import '../services/auth_service_factory.dart';
+import 'areas_screen.dart';
 import 'create_task_screen.dart';
 import 'login_screen.dart';
 import 'contexts_screen.dart';
@@ -212,6 +213,18 @@ class _InboxScreenState extends State<InboxScreen> {
               Navigator.of(context).push(
                 MaterialPageRoute(
                   builder: (context) => ContextsScreen(userId: widget.userId),
+                ),
+              );
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.category),
+            title: const Text('Areas'),
+            onTap: () {
+              Navigator.pop(context); // Close drawer
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => AreasScreen(userId: widget.userId),
                 ),
               );
             },
