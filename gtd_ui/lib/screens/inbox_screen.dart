@@ -6,6 +6,7 @@ import 'areas_screen.dart';
 import 'create_task_screen.dart';
 import 'login_screen.dart';
 import 'contexts_screen.dart';
+import 'projects_screen.dart';
 
 class InboxScreen extends StatefulWidget {
   final int userId;
@@ -233,11 +234,12 @@ class _InboxScreenState extends State<InboxScreen> {
           ListTile(
             leading: const Icon(Icons.folder_outlined),
             title: const Text('Projects'),
-            enabled: false,
             onTap: () {
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Projects - Coming soon')),
+              Navigator.pop(context); // Close drawer
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => ProjectsScreen(userId: widget.userId),
+                ),
               );
             },
           ),
