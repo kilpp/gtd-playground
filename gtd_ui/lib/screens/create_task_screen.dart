@@ -1,14 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:intl/intl.dart';
 import '../services/task_service.dart';
+import '../services/project_service.dart';
+import '../services/context_service.dart';
+import '../models/project.dart';
+import '../models/context.dart';
 
 class CreateTaskScreen extends StatefulWidget {
   final int userId;
 
-  const CreateTaskScreen({
-    super.key,
-    required this.userId,
-  });
+  const CreateTaskScreen({super.key, required this.userId});
 
   @override
   State<CreateTaskScreen> createState() => _CreateTaskScreenState();
@@ -17,28 +19,86 @@ class CreateTaskScreen extends StatefulWidget {
 class _CreateTaskScreenState extends State<CreateTaskScreen> {
   final _formKey = GlobalKey<FormState>();
   final TaskService _taskService = TaskService();
+  final ProjectService _projectService = ProjectService();
+  final ContextService _contextService = ContextService();
 
   // Form controllers
   final _titleController = TextEditingController();
   final _notesController = TextEditingController();
+  final _waitingOnController = TextEditingController();
 
   // Form values
   String _status = 'inbox';
   int? _priority;
   int? _energy;
   int? _durationEstMin;
+  Project? _selectedProject;
+  Context? _selectedContext;
+  DateTime? _dueDate;
+  DateTime? _deferUntil;
+  DateTime? _waitingSince;
 
+  // Lists for dropdowns
+  List<Project> _projects = [];
+  List<Context> _contexts = [];
   bool _isLoading = false;
+  bool _isLoadingData = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    setState(() {
+      _isLoadingData = true;
+    });
+
+    try {
+      final projects = await _projectService.getProjectsByUserId(widget.userId);
+      final contexts = await _contextService.getContextsByUserId(widget.userId);
+      setState(() {
+        _projects = projects.where((p) => p.status == 'active').toList();
+        _contexts = contexts;
+        _isLoadingData = false;
+      });
+    } catch (e) {
+      setState(() {
+        _isLoadingData = false;
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error loading data: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
 
   @override
   void dispose() {
     _titleController.dispose();
     _notesController.dispose();
+    _waitingOnController.dispose();
     super.dispose();
   }
 
   Future<void> _submitForm() async {
     if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
+    // Validate waiting status fields
+    if (_status == 'waiting' && _waitingOnController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please specify who/what you are waiting on'),
+          backgroundColor: Colors.red,
+        ),
+      );
       return;
     }
 
@@ -57,6 +117,17 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
         'priority': _priority,
         'energy': _energy,
         'durationEstMin': _durationEstMin,
+        'projectId': _selectedProject?.id,
+        'contextId': _selectedContext?.id,
+        'dueAt': _dueDate?.toIso8601String(),
+        'deferUntil': _deferUntil?.toIso8601String(),
+        'waitingOn':
+            _status == 'waiting' && _waitingOnController.text.trim().isNotEmpty
+            ? _waitingOnController.text.trim()
+            : null,
+        'waitingSince': _status == 'waiting' && _waitingSince != null
+            ? _waitingSince!.toIso8601String()
+            : null,
       };
 
       await _taskService.createTask(taskData);
@@ -93,6 +164,16 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
+    if (_isLoadingData) {
+      return Scaffold(
+        appBar: AppBar(
+          title: const Text('Create Task'),
+          backgroundColor: colorScheme.primaryContainer,
+        ),
+        body: const Center(child: CircularProgressIndicator()),
+      );
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Create Task'),
@@ -122,6 +203,66 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
                 return null;
               },
               textCapitalization: TextCapitalization.sentences,
+            ),
+            const SizedBox(height: 16),
+
+            // Project dropdown
+            DropdownButtonFormField<Project?>(
+              value: _selectedProject,
+              decoration: InputDecoration(
+                labelText: 'Project (optional)',
+                border: const OutlineInputBorder(),
+                prefixIcon: const Icon(Icons.folder),
+                filled: true,
+                fillColor: colorScheme.surface,
+              ),
+              items: [
+                const DropdownMenuItem<Project?>(
+                  value: null,
+                  child: Text('No Project'),
+                ),
+                ..._projects.map(
+                  (project) => DropdownMenuItem<Project?>(
+                    value: project,
+                    child: Text(project.title),
+                  ),
+                ),
+              ],
+              onChanged: (value) {
+                setState(() {
+                  _selectedProject = value;
+                });
+              },
+            ),
+            const SizedBox(height: 16),
+
+            // Context dropdown
+            DropdownButtonFormField<Context?>(
+              value: _selectedContext,
+              decoration: InputDecoration(
+                labelText: 'Context (optional)',
+                border: const OutlineInputBorder(),
+                prefixIcon: const Icon(Icons.location_on),
+                filled: true,
+                fillColor: colorScheme.surface,
+              ),
+              items: [
+                const DropdownMenuItem<Context?>(
+                  value: null,
+                  child: Text('No Context'),
+                ),
+                ..._contexts.map(
+                  (context) => DropdownMenuItem<Context?>(
+                    value: context,
+                    child: Text(context.name),
+                  ),
+                ),
+              ],
+              onChanged: (value) {
+                setState(() {
+                  _selectedContext = value;
+                });
+              },
             ),
             const SizedBox(height: 16),
 
@@ -155,45 +296,204 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
               items: const [
                 DropdownMenuItem(value: 'inbox', child: Text('Inbox')),
                 DropdownMenuItem(value: 'next', child: Text('Next Action')),
+                DropdownMenuItem(value: 'waiting', child: Text('Waiting For')),
+                DropdownMenuItem(value: 'scheduled', child: Text('Scheduled')),
                 DropdownMenuItem(
-                    value: 'waiting', child: Text('Waiting For')),
-                DropdownMenuItem(
-                    value: 'scheduled', child: Text('Scheduled')),
-                DropdownMenuItem(value: 'someday', child: Text('Someday/Maybe')),
+                  value: 'someday',
+                  child: Text('Someday/Maybe'),
+                ),
               ],
               onChanged: (value) {
                 setState(() {
                   _status = value!;
+                  // Set waitingSince to now when changing to waiting status
+                  if (_status == 'waiting' && _waitingSince == null) {
+                    _waitingSince = DateTime.now();
+                  }
                 });
               },
+            ),
+            const SizedBox(height: 16),
+
+            // Waiting fields (only show when status is "waiting")
+            if (_status == 'waiting') ...[
+              TextFormField(
+                controller: _waitingOnController,
+                decoration: InputDecoration(
+                  labelText: 'Waiting On *',
+                  hintText: 'Who or what are you waiting for?',
+                  border: const OutlineInputBorder(),
+                  prefixIcon: const Icon(Icons.hourglass_empty),
+                  filled: true,
+                  fillColor: colorScheme.surface,
+                ),
+                maxLength: 500,
+                textCapitalization: TextCapitalization.sentences,
+              ),
+              const SizedBox(height: 16),
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                title: Text(
+                  _waitingSince == null
+                      ? 'Waiting Since (optional)'
+                      : 'Waiting Since: ${DateFormat.yMMMd().format(_waitingSince!)}',
+                ),
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (_waitingSince != null)
+                      IconButton(
+                        icon: const Icon(Icons.clear),
+                        onPressed: () {
+                          setState(() {
+                            _waitingSince = null;
+                          });
+                        },
+                      ),
+                    IconButton(
+                      icon: const Icon(Icons.calendar_today),
+                      onPressed: () async {
+                        final date = await showDatePicker(
+                          context: context,
+                          initialDate: _waitingSince ?? DateTime.now(),
+                          firstDate: DateTime.now().subtract(
+                            const Duration(days: 365),
+                          ),
+                          lastDate: DateTime.now(),
+                        );
+                        if (date != null) {
+                          setState(() {
+                            _waitingSince = date;
+                          });
+                        }
+                      },
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+            ],
+
+            // Due Date
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              title: Text(
+                _dueDate == null
+                    ? 'Due Date (optional)'
+                    : 'Due: ${DateFormat.yMMMd().format(_dueDate!)}',
+              ),
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (_dueDate != null)
+                    IconButton(
+                      icon: const Icon(Icons.clear),
+                      onPressed: () {
+                        setState(() {
+                          _dueDate = null;
+                        });
+                      },
+                    ),
+                  IconButton(
+                    icon: const Icon(Icons.calendar_today),
+                    onPressed: () async {
+                      final date = await showDatePicker(
+                        context: context,
+                        initialDate: _dueDate ?? DateTime.now(),
+                        firstDate: DateTime.now(),
+                        lastDate: DateTime.now().add(
+                          const Duration(days: 3650),
+                        ),
+                      );
+                      if (date != null) {
+                        setState(() {
+                          _dueDate = date;
+                        });
+                      }
+                    },
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // Defer Until Date
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              title: Text(
+                _deferUntil == null
+                    ? 'Defer Until (optional)'
+                    : 'Defer Until: ${DateFormat.yMMMd().format(_deferUntil!)}',
+              ),
+              subtitle: _deferUntil == null
+                  ? const Text('Hide this task until a specific date')
+                  : null,
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (_deferUntil != null)
+                    IconButton(
+                      icon: const Icon(Icons.clear),
+                      onPressed: () {
+                        setState(() {
+                          _deferUntil = null;
+                        });
+                      },
+                    ),
+                  IconButton(
+                    icon: const Icon(Icons.calendar_today),
+                    onPressed: () async {
+                      final date = await showDatePicker(
+                        context: context,
+                        initialDate: _deferUntil ?? DateTime.now(),
+                        firstDate: DateTime.now(),
+                        lastDate: DateTime.now().add(
+                          const Duration(days: 3650),
+                        ),
+                      );
+                      if (date != null) {
+                        setState(() {
+                          _deferUntil = date;
+                        });
+                      }
+                    },
+                  ),
+                ],
+              ),
             ),
             const SizedBox(height: 24),
 
             // Priority section
-            Text(
-              'Priority',
-              style: theme.textTheme.titleMedium,
-            ),
+            Text('Priority', style: theme.textTheme.titleMedium),
             const SizedBox(height: 8),
             Wrap(
               spacing: 8,
               children: [
                 _buildPriorityChip(null, 'None', colorScheme),
-                _buildPriorityChip(1, 'P1 - High', colorScheme,
-                    color: Colors.red),
-                _buildPriorityChip(2, 'P2 - Medium', colorScheme,
-                    color: Colors.orange),
-                _buildPriorityChip(3, 'P3 - Low', colorScheme,
-                    color: Colors.yellow.shade700),
+                _buildPriorityChip(
+                  1,
+                  'P1 - High',
+                  colorScheme,
+                  color: Colors.red,
+                ),
+                _buildPriorityChip(
+                  2,
+                  'P2 - Medium',
+                  colorScheme,
+                  color: Colors.orange,
+                ),
+                _buildPriorityChip(
+                  3,
+                  'P3 - Low',
+                  colorScheme,
+                  color: Colors.yellow.shade700,
+                ),
               ],
             ),
             const SizedBox(height: 24),
 
             // Energy level section
-            Text(
-              'Energy Level',
-              style: theme.textTheme.titleMedium,
-            ),
+            Text('Energy Level', style: theme.textTheme.titleMedium),
             const SizedBox(height: 8),
             Wrap(
               spacing: 8,
@@ -269,8 +569,11 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
   }
 
   Widget _buildPriorityChip(
-      int? priority, String label, ColorScheme colorScheme,
-      {Color? color}) {
+    int? priority,
+    String label,
+    ColorScheme colorScheme, {
+    Color? color,
+  }) {
     final isSelected = _priority == priority;
     return FilterChip(
       label: Text(label),
@@ -281,7 +584,8 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
         });
       },
       backgroundColor: color?.withValues(alpha: 0.1),
-      selectedColor: color?.withValues(alpha: 0.3) ?? colorScheme.primaryContainer,
+      selectedColor:
+          color?.withValues(alpha: 0.3) ?? colorScheme.primaryContainer,
       checkmarkColor: color ?? colorScheme.primary,
     );
   }
