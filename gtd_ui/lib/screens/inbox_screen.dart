@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import '../models/task.dart';
 import '../services/task_service.dart';
+import '../services/task_dependency_service.dart';
 import '../services/auth_service_factory.dart';
 import 'areas_screen.dart';
 import 'create_task_screen.dart';
 import 'login_screen.dart';
 import 'contexts_screen.dart';
 import 'projects_screen.dart';
+import 'task_detail_screen.dart';
 
 class InboxScreen extends StatefulWidget {
   final int userId;
@@ -19,8 +21,11 @@ class InboxScreen extends StatefulWidget {
 
 class _InboxScreenState extends State<InboxScreen> {
   final TaskService _taskService = TaskService();
+  final TaskDependencyService _dependencyService = TaskDependencyService();
   final dynamic _authService = AuthServiceFactory.getAuthService();
   List<Task> _tasks = [];
+  Map<int, int> _taskDependencyCounts = {}; // taskId -> count of dependencies
+  Map<int, int> _taskBlockerCounts = {}; // taskId -> count of blockers
   bool _isLoading = false;
   String? _errorMessage;
 
@@ -39,8 +44,30 @@ class _InboxScreenState extends State<InboxScreen> {
     try {
       print(" Loading inbox tasks for user ${widget.userId}...");
       final tasks = await _taskService.getInboxTasks(userId: widget.userId);
+
+      // Load dependency counts for all tasks
+      final depCounts = <int, int>{};
+      final blockerCounts = <int, int>{};
+
+      for (var task in tasks) {
+        try {
+          final deps = await _dependencyService.getDependenciesForTask(task.id);
+          final blockers = await _dependencyService.getBlockingDependencies(
+            task.id,
+          );
+          depCounts[task.id] = deps.length;
+          blockerCounts[task.id] = blockers.length;
+        } catch (e) {
+          print('Error loading dependencies for task ${task.id}: $e');
+          depCounts[task.id] = 0;
+          blockerCounts[task.id] = 0;
+        }
+      }
+
       setState(() {
         _tasks = tasks;
+        _taskDependencyCounts = depCounts;
+        _taskBlockerCounts = blockerCounts;
         _isLoading = false;
       });
     } catch (e) {
@@ -339,6 +366,9 @@ class _InboxScreenState extends State<InboxScreen> {
   }
 
   Widget _buildTaskCard(Task task, ThemeData theme, ColorScheme colorScheme) {
+    final depCount = _taskDependencyCounts[task.id] ?? 0;
+    final blockerCount = _taskBlockerCounts[task.id] ?? 0;
+
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       child: ListTile(
@@ -351,11 +381,70 @@ class _InboxScreenState extends State<InboxScreen> {
           ),
           child: Icon(Icons.inbox, color: colorScheme.primary),
         ),
-        title: Text(
-          task.title,
-          style: theme.textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.w600,
-          ),
+        title: Row(
+          children: [
+            Expanded(
+              child: Text(
+                task.title,
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+            if (depCount > 0)
+              Tooltip(
+                message:
+                    '$depCount ${depCount == 1 ? 'dependency' : 'dependencies'}',
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.orange.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.link, size: 12, color: Colors.orange),
+                      const SizedBox(width: 2),
+                      Text(
+                        '$depCount',
+                        style: TextStyle(fontSize: 10, color: Colors.orange),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            if (depCount > 0 && blockerCount > 0) const SizedBox(width: 4),
+            if (blockerCount > 0)
+              Tooltip(
+                message:
+                    'Blocking $blockerCount ${blockerCount == 1 ? 'task' : 'tasks'}',
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.red.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.lock, size: 12, color: Colors.red),
+                      const SizedBox(width: 2),
+                      Text(
+                        '$blockerCount',
+                        style: TextStyle(fontSize: 10, color: Colors.red),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+          ],
         ),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -434,11 +523,18 @@ class _InboxScreenState extends State<InboxScreen> {
             ),
           ],
         ),
-        onTap: () {
-          // TODO: Navigate to task details
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Task details for: ${task.title}')),
+        onTap: () async {
+          // Navigate to task details
+          final result = await Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (context) =>
+                  TaskDetailScreen(task: task, userId: widget.userId),
+            ),
           );
+          // Refresh if needed
+          if (result == true && mounted) {
+            _loadInboxTasks();
+          }
         },
       ),
     );
