@@ -4,8 +4,10 @@ import 'package:intl/intl.dart';
 import '../services/task_service.dart';
 import '../services/project_service.dart';
 import '../services/context_service.dart';
+import '../services/tag_service.dart';
 import '../models/project.dart';
 import '../models/context.dart';
+import '../models/tag.dart';
 
 class CreateTaskScreen extends StatefulWidget {
   final int userId;
@@ -21,6 +23,7 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
   final TaskService _taskService = TaskService();
   final ProjectService _projectService = ProjectService();
   final ContextService _contextService = ContextService();
+  final TagService _tagService = TagService();
 
   // Form controllers
   final _titleController = TextEditingController();
@@ -37,10 +40,12 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
   DateTime? _dueDate;
   DateTime? _deferUntil;
   DateTime? _waitingSince;
+  List<Tag> _selectedTags = [];
 
   // Lists for dropdowns
   List<Project> _projects = [];
   List<Context> _contexts = [];
+  List<Tag> _tags = [];
   bool _isLoading = false;
   bool _isLoadingData = true;
 
@@ -58,9 +63,11 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
     try {
       final projects = await _projectService.getProjectsByUserId(widget.userId);
       final contexts = await _contextService.getContextsByUserId(widget.userId);
+      final tags = await _tagService.getTagsByUserId(widget.userId);
       setState(() {
         _projects = projects.where((p) => p.status == 'active').toList();
         _contexts = contexts;
+        _tags = tags;
         _isLoadingData = false;
       });
     } catch (e) {
@@ -130,7 +137,19 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
             : null,
       };
 
-      await _taskService.createTask(taskData);
+      final createdTask = await _taskService.createTask(taskData);
+
+      // Add tags to the task if any were selected
+      if (_selectedTags.isNotEmpty) {
+        for (var tag in _selectedTags) {
+          try {
+            await _taskService.addTagToTask(createdTask.id, tag.id, widget.userId);
+          } catch (e) {
+            // Log but don't fail the whole operation
+            print('Warning: Could not add tag "${tag.name}" to task: $e');
+          }
+        }
+      }
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -264,6 +283,42 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
                 });
               },
             ),
+            const SizedBox(height: 16),
+
+            // Tags section
+            Text('Tags (optional)', style: theme.textTheme.titleMedium),
+            const SizedBox(height: 8),
+            if (_tags.isEmpty)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8.0),
+                child: Text(
+                  'No tags available. Create tags first.',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: colorScheme.onSurface.withValues(alpha: 0.6),
+                  ),
+                ),
+              )
+            else
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: _tags.map((tag) {
+                  final isSelected = _selectedTags.contains(tag);
+                  return FilterChip(
+                    label: Text(tag.name),
+                    selected: isSelected,
+                    onSelected: (selected) {
+                      setState(() {
+                        if (selected) {
+                          _selectedTags.add(tag);
+                        } else {
+                          _selectedTags.remove(tag);
+                        }
+                      });
+                    },
+                  );
+                }).toList(),
+              ),
             const SizedBox(height: 16),
 
             // Notes field

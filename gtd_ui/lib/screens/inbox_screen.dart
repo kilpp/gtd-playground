@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import '../models/task.dart';
+import '../models/tag.dart';
 import '../services/task_service.dart';
 import '../services/task_dependency_service.dart';
+import '../services/tag_service.dart';
 import '../services/auth_service_factory.dart';
 import 'areas_screen.dart';
 import 'create_task_screen.dart';
@@ -23,10 +25,13 @@ class InboxScreen extends StatefulWidget {
 class _InboxScreenState extends State<InboxScreen> {
   final TaskService _taskService = TaskService();
   final TaskDependencyService _dependencyService = TaskDependencyService();
+  final TagService _tagService = TagService();
   final dynamic _authService = AuthServiceFactory.getAuthService();
   List<Task> _tasks = [];
   Map<int, int> _taskDependencyCounts = {}; // taskId -> count of dependencies
   Map<int, int> _taskBlockerCounts = {}; // taskId -> count of blockers
+  Map<int, List<Tag>> _taskTags = {}; // taskId -> list of tags
+  List<Tag> _allTags = []; // All available tags for the user
   bool _isLoading = false;
   String? _errorMessage;
 
@@ -45,10 +50,14 @@ class _InboxScreenState extends State<InboxScreen> {
     try {
       print(" Loading inbox tasks for user ${widget.userId}...");
       final tasks = await _taskService.getInboxTasks(userId: widget.userId);
+      
+      // Load all tags for the user
+      final allTags = await _tagService.getTagsByUserId(widget.userId);
 
-      // Load dependency counts for all tasks
+      // Load dependency counts and tags for all tasks
       final depCounts = <int, int>{};
       final blockerCounts = <int, int>{};
+      final taskTags = <int, List<Tag>>{};
 
       for (var task in tasks) {
         try {
@@ -58,10 +67,15 @@ class _InboxScreenState extends State<InboxScreen> {
           );
           depCounts[task.id] = deps.length;
           blockerCounts[task.id] = blockers.length;
+          
+          // Load tags for this task
+          final tagsJson = await _taskService.getTagsForTask(task.id, widget.userId);
+          taskTags[task.id] = tagsJson.map((json) => Tag.fromJson(json as Map<String, dynamic>)).toList();
         } catch (e) {
-          print('Error loading dependencies for task ${task.id}: $e');
+          print('Error loading dependencies/tags for task ${task.id}: $e');
           depCounts[task.id] = 0;
           blockerCounts[task.id] = 0;
+          taskTags[task.id] = [];
         }
       }
 
@@ -69,6 +83,8 @@ class _InboxScreenState extends State<InboxScreen> {
         _tasks = tasks;
         _taskDependencyCounts = depCounts;
         _taskBlockerCounts = blockerCounts;
+        _taskTags = taskTags;
+        _allTags = allTags;
         _isLoading = false;
       });
     } catch (e) {
@@ -498,12 +514,33 @@ class _InboxScreenState extends State<InboxScreen> {
                 ],
               ],
             ),
+            // Tags display
+            if (_taskTags[task.id]?.isNotEmpty ?? false) ...[
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 4,
+                runSpacing: 4,
+                children: (_taskTags[task.id] ?? []).map((tag) {
+                  return Chip(
+                    label: Text(
+                      tag.name,
+                      style: theme.textTheme.bodySmall,
+                    ),
+                    visualDensity: VisualDensity.compact,
+                    padding: EdgeInsets.zero,
+                    labelPadding: const EdgeInsets.symmetric(horizontal: 6),
+                  );
+                }).toList(),
+              ),
+            ],
           ],
         ),
         trailing: PopupMenuButton<String>(
           onSelected: (value) {
             if (value == 'delete') {
               _confirmDelete(task);
+            } else if (value == 'manage_tags') {
+              _showTagManagementDialog(task);
             }
           },
           itemBuilder: (context) => [
@@ -511,6 +548,16 @@ class _InboxScreenState extends State<InboxScreen> {
               value: 'edit',
               child: Row(
                 children: [Icon(Icons.edit), SizedBox(width: 8), Text('Edit')],
+              ),
+            ),
+            const PopupMenuItem(
+              value: 'manage_tags',
+              child: Row(
+                children: [
+                  Icon(Icons.label),
+                  SizedBox(width: 8),
+                  Text('Manage Tags'),
+                ],
               ),
             ),
             const PopupMenuItem(
@@ -552,6 +599,90 @@ class _InboxScreenState extends State<InboxScreen> {
         return Colors.yellow.shade700;
       default:
         return colorScheme.onSurface;
+    }
+  }
+
+  Future<void> _showTagManagementDialog(Task task) async {
+    final currentTags = _taskTags[task.id] ?? [];
+    final selectedTags = List<Tag>.from(currentTags);
+    
+    final result = await showDialog<List<Tag>>(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) {
+          return AlertDialog(
+            title: const Text('Manage Tags'),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (_allTags.isEmpty)
+                    const Text('No tags available. Create tags first.')
+                  else
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: _allTags.map((tag) {
+                        final isSelected = selectedTags.any((t) => t.id == tag.id);
+                        return FilterChip(
+                          label: Text(tag.name),
+                          selected: isSelected,
+                          onSelected: (selected) {
+                            setState(() {
+                              if (selected) {
+                                selectedTags.add(tag);
+                              } else {
+                                selectedTags.removeWhere((t) => t.id == tag.id);
+                              }
+                            });
+                          },
+                        );
+                      }).toList(),
+                    ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(context).pop(null),
+                child: const Text('Cancel'),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.of(context).pop(selectedTags),
+                child: const Text('Save'),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+
+    if (result != null && mounted) {
+      // Update tags for this task
+      final currentTagIds = currentTags.map((t) => t.id).toSet();
+      final newTagIds = result.map((t) => t.id).toSet();
+      
+      // Remove tags that were deselected
+      for (var tagId in currentTagIds.difference(newTagIds)) {
+        try {
+          await _taskService.removeTagFromTask(task.id, tagId, widget.userId);
+        } catch (e) {
+          print('Error removing tag: $e');
+        }
+      }
+      
+      // Add tags that were newly selected
+      for (var tagId in newTagIds.difference(currentTagIds)) {
+        try {
+          await _taskService.addTagToTask(task.id, tagId, widget.userId);
+        } catch (e) {
+          print('Error adding tag: $e');
+        }
+      }
+      
+      // Reload tasks to reflect changes
+      _loadInboxTasks();
     }
   }
 

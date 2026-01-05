@@ -140,4 +140,54 @@ class TaskService {
       throw Exception('Error deleting task: $e');
     }
   }
+
+  /// Adds a tag to a task
+  Future<void> addTagToTask(int taskId, int tagId, int userId) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/$taskId/tags/$tagId?userId=$userId'),
+        headers: {'Content-Type': 'application/json'},
+      );
+
+      if (response.statusCode != 200) {
+        throw Exception('Failed to add tag: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Error adding tag to task: $e');
+    }
+  }
+
+  /// Removes a tag from a task
+  Future<void> removeTagFromTask(int taskId, int tagId, int userId) async {
+    try {
+      final response = await http.delete(
+        Uri.parse('$baseUrl/$taskId/tags/$tagId?userId=$userId'),
+        headers: {'Content-Type': 'application/json'},
+      );
+
+      if (response.statusCode != 204 && response.statusCode != 200) {
+        throw Exception('Failed to remove tag: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Error removing tag from task: $e');
+    }
+  }
+
+  /// Gets all tags for a specific task
+  Future<List<dynamic>> getTagsForTask(int taskId, int userId) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/$taskId/tags?userId=$userId'),
+        headers: {'Content-Type': 'application/json'},
+      );
+
+      if (response.statusCode == 200) {
+        return json.decode(response.body) as List;
+      } else {
+        throw Exception('Failed to get tags: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Error getting tags for task: $e');
+    }
+  }
 }
