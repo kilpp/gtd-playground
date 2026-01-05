@@ -8,6 +8,7 @@ import 'create_task_screen.dart';
 import 'login_screen.dart';
 import 'contexts_screen.dart';
 import 'projects_screen.dart';
+import 'tags_screen.dart';
 import 'task_detail_screen.dart';
 
 class InboxScreen extends StatefulWidget {
@@ -272,12 +273,13 @@ class _InboxScreenState extends State<InboxScreen> {
           ),
           ListTile(
             leading: const Icon(Icons.label_outline),
-            title: const Text('Labels'),
-            enabled: false,
+            title: const Text('Tags'),
             onTap: () {
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Labels - Coming soon')),
+              Navigator.pop(context); // Close drawer
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => TagsScreen(userId: widget.userId),
+                ),
               );
             },
           ),
