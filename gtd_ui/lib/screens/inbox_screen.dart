@@ -12,6 +12,7 @@ import 'contexts_screen.dart';
 import 'projects_screen.dart';
 import 'tags_screen.dart';
 import 'task_detail_screen.dart';
+import 'references_screen.dart';
 
 class InboxScreen extends StatefulWidget {
   final int userId;
@@ -295,6 +296,19 @@ class _InboxScreenState extends State<InboxScreen> {
               Navigator.of(context).push(
                 MaterialPageRoute(
                   builder: (context) => TagsScreen(userId: widget.userId),
+                ),
+              );
+            },
+          ),
+          const Divider(),
+          ListTile(
+            leading: const Icon(Icons.description),
+            title: const Text('Reference Store'),
+            onTap: () {
+              Navigator.pop(context); // Close drawer
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => ReferencesScreen(userId: widget.userId),
                 ),
               );
             },
