@@ -58,7 +58,7 @@ class _InboxScreenState extends State<InboxScreen> {
     try {
       print(" Loading inbox tasks for user ${widget.userId}...");
       final tasks = await _taskService.getInboxTasks(userId: widget.userId);
-      
+
       // Load all tags for the user
       final allTags = await _tagService.getTagsByUserId(widget.userId);
 
@@ -75,10 +75,15 @@ class _InboxScreenState extends State<InboxScreen> {
           );
           depCounts[task.id] = deps.length;
           blockerCounts[task.id] = blockers.length;
-          
+
           // Load tags for this task
-          final tagsJson = await _taskService.getTagsForTask(task.id, widget.userId);
-          taskTags[task.id] = tagsJson.map((json) => Tag.fromJson(json as Map<String, dynamic>)).toList();
+          final tagsJson = await _taskService.getTagsForTask(
+            task.id,
+            widget.userId,
+          );
+          taskTags[task.id] = tagsJson
+              .map((json) => Tag.fromJson(json as Map<String, dynamic>))
+              .toList();
         } catch (e) {
           print('Error loading dependencies/tags for task ${task.id}: $e');
           depCounts[task.id] = 0;
@@ -266,7 +271,8 @@ class _InboxScreenState extends State<InboxScreen> {
               Navigator.pop(context);
               Navigator.of(context).push(
                 MaterialPageRoute(
-                  builder: (context) => NextActionsScreen(userId: widget.userId),
+                  builder: (context) =>
+                      NextActionsScreen(userId: widget.userId),
                 ),
               );
             },
@@ -314,7 +320,8 @@ class _InboxScreenState extends State<InboxScreen> {
               Navigator.pop(context);
               Navigator.of(context).push(
                 MaterialPageRoute(
-                  builder: (context) => SomedayTasksScreen(userId: widget.userId),
+                  builder: (context) =>
+                      SomedayTasksScreen(userId: widget.userId),
                 ),
               );
             },
@@ -326,7 +333,8 @@ class _InboxScreenState extends State<InboxScreen> {
               Navigator.pop(context);
               Navigator.of(context).push(
                 MaterialPageRoute(
-                  builder: (context) => SomedayProjectsScreen(userId: widget.userId),
+                  builder: (context) =>
+                      SomedayProjectsScreen(userId: widget.userId),
                 ),
               );
             },
@@ -339,7 +347,8 @@ class _InboxScreenState extends State<InboxScreen> {
               Navigator.pop(context);
               Navigator.of(context).push(
                 MaterialPageRoute(
-                  builder: (context) => WeeklyReviewScreen(userId: widget.userId),
+                  builder: (context) =>
+                      WeeklyReviewScreen(userId: widget.userId),
                 ),
               );
             },
@@ -630,10 +639,7 @@ class _InboxScreenState extends State<InboxScreen> {
                 runSpacing: 4,
                 children: (_taskTags[task.id] ?? []).map((tag) {
                   return Chip(
-                    label: Text(
-                      tag.name,
-                      style: theme.textTheme.bodySmall,
-                    ),
+                    label: Text(tag.name, style: theme.textTheme.bodySmall),
                     visualDensity: VisualDensity.compact,
                     padding: EdgeInsets.zero,
                     labelPadding: const EdgeInsets.symmetric(horizontal: 6),
@@ -713,7 +719,7 @@ class _InboxScreenState extends State<InboxScreen> {
   Future<void> _showTagManagementDialog(Task task) async {
     final currentTags = _taskTags[task.id] ?? [];
     final selectedTags = List<Tag>.from(currentTags);
-    
+
     final result = await showDialog<List<Tag>>(
       context: context,
       builder: (context) => StatefulBuilder(
@@ -732,7 +738,9 @@ class _InboxScreenState extends State<InboxScreen> {
                       spacing: 8,
                       runSpacing: 8,
                       children: _allTags.map((tag) {
-                        final isSelected = selectedTags.any((t) => t.id == tag.id);
+                        final isSelected = selectedTags.any(
+                          (t) => t.id == tag.id,
+                        );
                         return FilterChip(
                           label: Text(tag.name),
                           selected: isSelected,
@@ -770,7 +778,7 @@ class _InboxScreenState extends State<InboxScreen> {
       // Update tags for this task
       final currentTagIds = currentTags.map((t) => t.id).toSet();
       final newTagIds = result.map((t) => t.id).toSet();
-      
+
       // Remove tags that were deselected
       for (var tagId in currentTagIds.difference(newTagIds)) {
         try {
@@ -779,7 +787,7 @@ class _InboxScreenState extends State<InboxScreen> {
           print('Error removing tag: $e');
         }
       }
-      
+
       // Add tags that were newly selected
       for (var tagId in newTagIds.difference(currentTagIds)) {
         try {
@@ -788,7 +796,7 @@ class _InboxScreenState extends State<InboxScreen> {
           print('Error adding tag: $e');
         }
       }
-      
+
       // Reload tasks to reflect changes
       _loadInboxTasks();
     }

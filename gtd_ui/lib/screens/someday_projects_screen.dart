@@ -32,10 +32,12 @@ class _SomedayProjectsScreenState extends State<SomedayProjectsScreen> {
     try {
       // Get all projects for this user
       final projects = await _projectService.getProjectsByUserId(widget.userId);
-      
+
       // Filter for someday status
-      final somedayProjects = projects.where((p) => p.status == 'someday').toList();
-      
+      final somedayProjects = projects
+          .where((p) => p.status == 'someday')
+          .toList();
+
       setState(() {
         _projects = somedayProjects;
         _isLoading = false;
@@ -50,18 +52,27 @@ class _SomedayProjectsScreenState extends State<SomedayProjectsScreen> {
 
   Future<void> _activateProject(Project project) async {
     try {
-      await _projectService.updateProject(project.id, {'status': 'active'});
+      await _projectService.updateProject(
+        id: project.id,
+        userId: project.userId,
+        title: project.title,
+        status: 'active',
+        areaId: project.areaId,
+        outcome: project.outcome,
+        notes: project.notes,
+        dueDate: project.dueDate,
+      );
       _loadSomedayProjects();
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Project activated')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Project activated')));
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error: $e')));
       }
     }
   }
@@ -91,9 +102,9 @@ class _SomedayProjectsScreenState extends State<SomedayProjectsScreen> {
         _loadSomedayProjects();
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Error: $e')),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('Error: $e')));
         }
       }
     }

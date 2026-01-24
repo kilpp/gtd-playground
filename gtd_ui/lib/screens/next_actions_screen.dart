@@ -33,22 +33,22 @@ class _NextActionsScreenState extends State<NextActionsScreen> {
     try {
       // Get tasks with status 'next' for this user
       final tasks = await _taskService.getTasksByStatus('next');
-      
+
       // Filter for this user and exclude deferred/blocked tasks
       final now = DateTime.now();
       final filteredTasks = tasks.where((task) {
         // Must belong to this user
         if (task.userId != widget.userId) return false;
-        
+
         // Exclude if deferred to future
         if (task.deferUntil != null && task.deferUntil!.isAfter(now)) {
           return false;
         }
-        
+
         // Could add dependency checking here if needed
         return true;
       }).toList();
-      
+
       setState(() {
         _tasks = filteredTasks;
         _isLoading = false;
@@ -67,9 +67,9 @@ class _NextActionsScreenState extends State<NextActionsScreen> {
       _loadNextActions();
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error: $e')));
       }
     }
   }
@@ -169,10 +169,7 @@ class _NextActionsScreenState extends State<NextActionsScreen> {
                   style: const TextStyle(color: Colors.white, fontSize: 12),
                 ),
               ),
-              title: Text(
-                task.title,
-                style: theme.textTheme.bodyLarge,
-              ),
+              title: Text(task.title, style: theme.textTheme.bodyLarge),
               subtitle: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -196,7 +193,11 @@ class _NextActionsScreenState extends State<NextActionsScreen> {
                         const SizedBox(width: 8),
                       ],
                       if (task.durationEstMin != null) ...[
-                        Icon(Icons.access_time, size: 14, color: colorScheme.primary),
+                        Icon(
+                          Icons.access_time,
+                          size: 14,
+                          color: colorScheme.primary,
+                        ),
                         Text(' ${task.durationEstMin}min'),
                       ],
                     ],
@@ -211,7 +212,8 @@ class _NextActionsScreenState extends State<NextActionsScreen> {
               onTap: () {
                 Navigator.of(context).push(
                   MaterialPageRoute(
-                    builder: (context) => TaskDetailScreen(task: task),
+                    builder: (context) =>
+                        TaskDetailScreen(task: task, userId: widget.userId),
                   ),
                 );
               },

@@ -33,8 +33,10 @@ class _SomedayTasksScreenState extends State<SomedayTasksScreen> {
     try {
       // Get tasks with status 'someday' for this user
       final tasks = await _taskService.getTasksByStatus('someday');
-      final filteredTasks = tasks.where((task) => task.userId == widget.userId).toList();
-      
+      final filteredTasks = tasks
+          .where((task) => task.userId == widget.userId)
+          .toList();
+
       setState(() {
         _tasks = filteredTasks;
         _isLoading = false;
@@ -52,15 +54,15 @@ class _SomedayTasksScreenState extends State<SomedayTasksScreen> {
       await _taskService.updateTask(task.id, {'status': 'next'});
       _loadSomedayTasks();
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Moved to Next Actions')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Moved to Next Actions')));
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error: $e')));
       }
     }
   }
@@ -90,9 +92,9 @@ class _SomedayTasksScreenState extends State<SomedayTasksScreen> {
         _loadSomedayTasks();
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Error: $e')),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('Error: $e')));
         }
       }
     }
@@ -194,10 +196,7 @@ class _SomedayTasksScreenState extends State<SomedayTasksScreen> {
                   size: 20,
                 ),
               ),
-              title: Text(
-                task.title,
-                style: theme.textTheme.bodyLarge,
-              ),
+              title: Text(task.title, style: theme.textTheme.bodyLarge),
               subtitle: task.notes?.isNotEmpty == true
                   ? Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -248,7 +247,8 @@ class _SomedayTasksScreenState extends State<SomedayTasksScreen> {
               onTap: () {
                 Navigator.of(context).push(
                   MaterialPageRoute(
-                    builder: (context) => TaskDetailScreen(task: task),
+                    builder: (context) =>
+                        TaskDetailScreen(task: task, userId: widget.userId),
                   ),
                 );
               },

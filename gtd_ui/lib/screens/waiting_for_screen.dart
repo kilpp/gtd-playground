@@ -33,8 +33,10 @@ class _WaitingForScreenState extends State<WaitingForScreen> {
     try {
       // Get tasks with status 'waiting' for this user
       final tasks = await _taskService.getTasksByStatus('waiting');
-      final filteredTasks = tasks.where((task) => task.userId == widget.userId).toList();
-      
+      final filteredTasks = tasks
+          .where((task) => task.userId == widget.userId)
+          .toList();
+
       setState(() {
         _tasks = filteredTasks;
         _isLoading = false;
@@ -52,15 +54,15 @@ class _WaitingForScreenState extends State<WaitingForScreen> {
       await _taskService.updateTask(task.id, {'status': 'next'});
       _loadWaitingForTasks();
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Moved to Next Actions')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Moved to Next Actions')));
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error: $e')));
       }
     }
   }
@@ -167,12 +169,13 @@ class _WaitingForScreenState extends State<WaitingForScreen> {
             child: ListTile(
               leading: CircleAvatar(
                 backgroundColor: colorScheme.tertiary,
-                child: const Icon(Icons.hourglass_bottom, color: Colors.white, size: 20),
+                child: const Icon(
+                  Icons.hourglass_bottom,
+                  color: Colors.white,
+                  size: 20,
+                ),
               ),
-              title: Text(
-                task.title,
-                style: theme.textTheme.bodyLarge,
-              ),
+              title: Text(task.title, style: theme.textTheme.bodyLarge),
               subtitle: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -180,7 +183,11 @@ class _WaitingForScreenState extends State<WaitingForScreen> {
                     const SizedBox(height: 4),
                     Row(
                       children: [
-                        Icon(Icons.person_outline, size: 14, color: colorScheme.primary),
+                        Icon(
+                          Icons.person_outline,
+                          size: 14,
+                          color: colorScheme.primary,
+                        ),
                         const SizedBox(width: 4),
                         Expanded(
                           child: Text(
@@ -238,7 +245,8 @@ class _WaitingForScreenState extends State<WaitingForScreen> {
               onTap: () {
                 Navigator.of(context).push(
                   MaterialPageRoute(
-                    builder: (context) => TaskDetailScreen(task: task),
+                    builder: (context) =>
+                        TaskDetailScreen(task: task, userId: widget.userId),
                   ),
                 );
               },

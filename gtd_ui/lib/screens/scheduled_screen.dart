@@ -33,8 +33,10 @@ class _ScheduledScreenState extends State<ScheduledScreen> {
     try {
       // Get tasks with status 'scheduled' for this user
       final tasks = await _taskService.getTasksByStatus('scheduled');
-      final filteredTasks = tasks.where((task) => task.userId == widget.userId).toList();
-      
+      final filteredTasks = tasks
+          .where((task) => task.userId == widget.userId)
+          .toList();
+
       // Sort by due date
       filteredTasks.sort((a, b) {
         if (a.dueAt == null && b.dueAt == null) return 0;
@@ -42,7 +44,7 @@ class _ScheduledScreenState extends State<ScheduledScreen> {
         if (b.dueAt == null) return -1;
         return a.dueAt!.compareTo(b.dueAt!);
       });
-      
+
       setState(() {
         _tasks = filteredTasks;
         _isLoading = false;
@@ -61,9 +63,9 @@ class _ScheduledScreenState extends State<ScheduledScreen> {
       _loadScheduledTasks();
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error: $e')));
       }
     }
   }
@@ -73,9 +75,9 @@ class _ScheduledScreenState extends State<ScheduledScreen> {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
     final taskDate = DateTime(date.year, date.month, date.day);
-    
+
     final difference = taskDate.difference(today).inDays;
-    
+
     if (difference == 0) {
       return 'Today ${_formatTime(date)}';
     } else if (difference == 1) {
@@ -92,7 +94,9 @@ class _ScheduledScreenState extends State<ScheduledScreen> {
   }
 
   String _formatTime(DateTime date) {
-    final hour = date.hour == 0 ? 12 : (date.hour > 12 ? date.hour - 12 : date.hour);
+    final hour = date.hour == 0
+        ? 12
+        : (date.hour > 12 ? date.hour - 12 : date.hour);
     final minute = date.minute.toString().padLeft(2, '0');
     final period = date.hour >= 12 ? 'PM' : 'AM';
     return 'at $hour:$minute $period';
@@ -194,27 +198,20 @@ class _ScheduledScreenState extends State<ScheduledScreen> {
         itemBuilder: (context, index) {
           final task = _tasks[index];
           final isOverdue = _isOverdue(task.dueAt);
-          
+
           return Card(
             margin: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 8.0),
-            color: isOverdue 
+            color: isOverdue
                 ? colorScheme.errorContainer.withValues(alpha: 0.3)
                 : null,
             child: ListTile(
               leading: CircleAvatar(
-                backgroundColor: isOverdue 
-                    ? colorScheme.error 
+                backgroundColor: isOverdue
+                    ? colorScheme.error
                     : colorScheme.primary,
-                child: Icon(
-                  Icons.schedule,
-                  color: Colors.white,
-                  size: 20,
-                ),
+                child: Icon(Icons.schedule, color: Colors.white, size: 20),
               ),
-              title: Text(
-                task.title,
-                style: theme.textTheme.bodyLarge,
-              ),
+              title: Text(task.title, style: theme.textTheme.bodyLarge),
               subtitle: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -224,14 +221,18 @@ class _ScheduledScreenState extends State<ScheduledScreen> {
                       Icon(
                         Icons.access_time,
                         size: 14,
-                        color: isOverdue ? colorScheme.error : colorScheme.primary,
+                        color: isOverdue
+                            ? colorScheme.error
+                            : colorScheme.primary,
                       ),
                       const SizedBox(width: 4),
                       Text(
                         _formatDate(task.dueAt),
                         style: theme.textTheme.bodySmall?.copyWith(
                           fontWeight: FontWeight.bold,
-                          color: isOverdue ? colorScheme.error : colorScheme.primary,
+                          color: isOverdue
+                              ? colorScheme.error
+                              : colorScheme.primary,
                         ),
                       ),
                     ],
@@ -257,7 +258,8 @@ class _ScheduledScreenState extends State<ScheduledScreen> {
               onTap: () {
                 Navigator.of(context).push(
                   MaterialPageRoute(
-                    builder: (context) => TaskDetailScreen(task: task),
+                    builder: (context) =>
+                        TaskDetailScreen(task: task, userId: widget.userId),
                   ),
                 );
               },

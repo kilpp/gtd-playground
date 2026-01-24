@@ -33,16 +33,16 @@ class _TicklerScreenState extends State<TicklerScreen> {
     try {
       // Get all tasks for this user
       final allTasks = await _taskService.getTasksByUserId(widget.userId);
-      
+
       // Filter for deferred tasks (those with deferUntil in the future)
       final now = DateTime.now();
       final deferredTasks = allTasks.where((task) {
-        return task.deferUntil != null && 
-               task.deferUntil!.isAfter(now) &&
-               task.status != 'done' &&
-               task.status != 'dropped';
+        return task.deferUntil != null &&
+            task.deferUntil!.isAfter(now) &&
+            task.status != 'done' &&
+            task.status != 'dropped';
       }).toList();
-      
+
       // Sort by defer date
       deferredTasks.sort((a, b) {
         if (a.deferUntil == null && b.deferUntil == null) return 0;
@@ -50,7 +50,7 @@ class _TicklerScreenState extends State<TicklerScreen> {
         if (b.deferUntil == null) return -1;
         return a.deferUntil!.compareTo(b.deferUntil!);
       });
-      
+
       setState(() {
         _tasks = deferredTasks;
         _isLoading = false;
@@ -71,15 +71,15 @@ class _TicklerScreenState extends State<TicklerScreen> {
       });
       _loadTicklerTasks();
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Moved to Next Actions')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Moved to Next Actions')));
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error: $e')));
       }
     }
   }
@@ -89,9 +89,9 @@ class _TicklerScreenState extends State<TicklerScreen> {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
     final taskDate = DateTime(date.year, date.month, date.day);
-    
+
     final difference = taskDate.difference(today).inDays;
-    
+
     if (difference == 0) {
       return 'Today';
     } else if (difference == 1) {
@@ -199,7 +199,7 @@ class _TicklerScreenState extends State<TicklerScreen> {
         itemCount: _tasks.length,
         itemBuilder: (context, index) {
           final task = _tasks[index];
-          
+
           return Card(
             margin: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 8.0),
             child: ListTile(
@@ -211,10 +211,7 @@ class _TicklerScreenState extends State<TicklerScreen> {
                   size: 20,
                 ),
               ),
-              title: Text(
-                task.title,
-                style: theme.textTheme.bodyLarge,
-              ),
+              title: Text(task.title, style: theme.textTheme.bodyLarge),
               subtitle: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -247,15 +244,13 @@ class _TicklerScreenState extends State<TicklerScreen> {
                       ),
                     ),
                   ],
-                  if (task.status != null) ...[
-                    const SizedBox(height: 4),
-                    Text(
-                      'Status: ${task.status}',
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: colorScheme.onSurface.withValues(alpha: 0.5),
-                      ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Status: ${task.status}',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: colorScheme.onSurface.withValues(alpha: 0.5),
                     ),
-                  ],
+                  ),
                 ],
               ),
               trailing: PopupMenuButton<String>(
@@ -280,7 +275,8 @@ class _TicklerScreenState extends State<TicklerScreen> {
               onTap: () {
                 Navigator.of(context).push(
                   MaterialPageRoute(
-                    builder: (context) => TaskDetailScreen(task: task),
+                    builder: (context) =>
+                        TaskDetailScreen(task: task, userId: widget.userId),
                   ),
                 );
               },

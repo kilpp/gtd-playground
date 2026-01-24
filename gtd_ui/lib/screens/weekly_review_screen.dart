@@ -16,7 +16,7 @@ class WeeklyReviewScreen extends StatefulWidget {
 class _WeeklyReviewScreenState extends State<WeeklyReviewScreen> {
   final ProjectService _projectService = ProjectService();
   final TaskService _taskService = TaskService();
-  
+
   List<Project> _projectsNeedingAction = [];
   List<Task> _waitingForTasks = [];
   List<Task> _inboxTasks = [];
@@ -37,35 +37,44 @@ class _WeeklyReviewScreenState extends State<WeeklyReviewScreen> {
 
     try {
       // Load projects
-      final allProjects = await _projectService.getProjectsByUserId(widget.userId);
-      final activeProjects = allProjects.where((p) => p.status == 'active').toList();
-      
+      final allProjects = await _projectService.getProjectsByUserId(
+        widget.userId,
+      );
+      final activeProjects = allProjects
+          .where((p) => p.status == 'active')
+          .toList();
+
       // Load all tasks
       final allTasks = await _taskService.getTasksByUserId(widget.userId);
-      
+
       // Find projects without next actions
       final projectsNeedingAction = <Project>[];
       for (final project in activeProjects) {
-        final hasNextAction = allTasks.any((task) => 
-          task.projectId == project.id && 
-          task.status == 'next' &&
-          task.userId == widget.userId
+        final hasNextAction = allTasks.any(
+          (task) =>
+              task.projectId == project.id &&
+              task.status == 'next' &&
+              task.userId == widget.userId,
         );
         if (!hasNextAction) {
           projectsNeedingAction.add(project);
         }
       }
-      
+
       // Get waiting for tasks
-      final waitingTasks = allTasks.where((task) => 
-        task.status == 'waiting' && task.userId == widget.userId
-      ).toList();
-      
+      final waitingTasks = allTasks
+          .where(
+            (task) => task.status == 'waiting' && task.userId == widget.userId,
+          )
+          .toList();
+
       // Get inbox tasks
-      final inboxTasks = allTasks.where((task) => 
-        task.status == 'inbox' && task.userId == widget.userId
-      ).toList();
-      
+      final inboxTasks = allTasks
+          .where(
+            (task) => task.status == 'inbox' && task.userId == widget.userId,
+          )
+          .toList();
+
       setState(() {
         _projectsNeedingAction = projectsNeedingAction;
         _waitingForTasks = waitingTasks;
@@ -168,7 +177,8 @@ class _WeeklyReviewScreenState extends State<WeeklyReviewScreen> {
                               Text(
                                 'Review your system and ensure everything is current',
                                 style: theme.textTheme.bodySmall?.copyWith(
-                                  color: colorScheme.onPrimaryContainer.withValues(alpha: 0.8),
+                                  color: colorScheme.onPrimaryContainer
+                                      .withValues(alpha: 0.8),
                                 ),
                               ),
                             ],
@@ -180,59 +190,62 @@ class _WeeklyReviewScreenState extends State<WeeklyReviewScreen> {
                 ),
               ),
             ),
-            
+
             const SizedBox(height: 24),
-            
+
             // Inbox Status
             _buildSection(
               theme,
               colorScheme,
               'Inbox',
               Icons.inbox,
-              _inboxTasks.isEmpty 
-                  ? 'All clear! ✓' 
+              _inboxTasks.isEmpty
+                  ? 'All clear! ✓'
                   : '${_inboxTasks.length} items need processing',
               _inboxTasks.isEmpty ? Colors.green : Colors.orange,
               showItems: _inboxTasks.isNotEmpty,
               items: _inboxTasks.map((t) => t.title).toList(),
             ),
-            
+
             const SizedBox(height: 16),
-            
+
             // Projects Needing Actions
             _buildSection(
               theme,
               colorScheme,
               'Projects Needing Next Actions',
               Icons.warning_amber,
-              _projectsNeedingAction.isEmpty 
-                  ? 'All projects have next actions ✓' 
+              _projectsNeedingAction.isEmpty
+                  ? 'All projects have next actions ✓'
                   : '${_projectsNeedingAction.length} projects need attention',
               _projectsNeedingAction.isEmpty ? Colors.green : Colors.red,
               showItems: _projectsNeedingAction.isNotEmpty,
               items: _projectsNeedingAction.map((p) => p.title).toList(),
             ),
-            
+
             const SizedBox(height: 16),
-            
+
             // Waiting For
             _buildSection(
               theme,
               colorScheme,
               'Waiting For',
               Icons.hourglass_bottom,
-              _waitingForTasks.isEmpty 
-                  ? 'Nothing waiting ✓' 
+              _waitingForTasks.isEmpty
+                  ? 'Nothing waiting ✓'
                   : '${_waitingForTasks.length} items waiting',
               _waitingForTasks.isEmpty ? Colors.green : Colors.blue,
               showItems: _waitingForTasks.isNotEmpty,
-              items: _waitingForTasks.map((t) => 
-                '${t.title}${t.waitingOn != null ? ' (from ${t.waitingOn})' : ''}'
-              ).toList(),
+              items: _waitingForTasks
+                  .map(
+                    (t) =>
+                        '${t.title}${t.waitingOn != null ? ' (from ${t.waitingOn})' : ''}',
+                  )
+                  .toList(),
             ),
-            
+
             const SizedBox(height: 24),
-            
+
             // Review Checklist
             Card(
               child: Padding(
@@ -247,12 +260,27 @@ class _WeeklyReviewScreenState extends State<WeeklyReviewScreen> {
                       ),
                     ),
                     const SizedBox(height: 12),
-                    _buildChecklistItem('Process inbox to zero', _inboxTasks.isEmpty),
-                    _buildChecklistItem('Review all projects for next actions', _projectsNeedingAction.isEmpty),
-                    _buildChecklistItem('Check waiting for items', _waitingForTasks.isEmpty),
+                    _buildChecklistItem(
+                      'Process inbox to zero',
+                      _inboxTasks.isEmpty,
+                    ),
+                    _buildChecklistItem(
+                      'Review all projects for next actions',
+                      _projectsNeedingAction.isEmpty,
+                    ),
+                    _buildChecklistItem(
+                      'Check waiting for items',
+                      _waitingForTasks.isEmpty,
+                    ),
                     _buildChecklistItem('Review someday/maybe lists', null),
-                    _buildChecklistItem('Review calendar for upcoming commitments', null),
-                    _buildChecklistItem('Review tickler for future items', null),
+                    _buildChecklistItem(
+                      'Review calendar for upcoming commitments',
+                      null,
+                    ),
+                    _buildChecklistItem(
+                      'Review tickler for future items',
+                      null,
+                    ),
                   ],
                 ),
               ),
@@ -310,21 +338,25 @@ class _WeeklyReviewScreenState extends State<WeeklyReviewScreen> {
               const SizedBox(height: 12),
               const Divider(),
               const SizedBox(height: 8),
-              ...items.take(5).map((item) => Padding(
-                padding: const EdgeInsets.symmetric(vertical: 4.0),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text('• ', style: TextStyle(fontSize: 16)),
-                    Expanded(
-                      child: Text(
-                        item,
-                        style: theme.textTheme.bodyMedium,
+              ...items
+                  .take(5)
+                  .map(
+                    (item) => Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 4.0),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text('• ', style: TextStyle(fontSize: 16)),
+                          Expanded(
+                            child: Text(
+                              item,
+                              style: theme.textTheme.bodyMedium,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                  ],
-                ),
-              )),
+                  ),
               if (items.length > 5)
                 Padding(
                   padding: const EdgeInsets.only(top: 4.0),
@@ -349,25 +381,25 @@ class _WeeklyReviewScreenState extends State<WeeklyReviewScreen> {
       child: Row(
         children: [
           Icon(
-            isComplete == true 
-                ? Icons.check_circle 
+            isComplete == true
+                ? Icons.check_circle
                 : isComplete == false
-                    ? Icons.error_outline
-                    : Icons.radio_button_unchecked,
+                ? Icons.error_outline
+                : Icons.radio_button_unchecked,
             size: 20,
-            color: isComplete == true 
-                ? Colors.green 
+            color: isComplete == true
+                ? Colors.green
                 : isComplete == false
-                    ? Colors.orange
-                    : Colors.grey,
+                ? Colors.orange
+                : Colors.grey,
           ),
           const SizedBox(width: 8),
           Expanded(
             child: Text(
               text,
               style: TextStyle(
-                decoration: isComplete == true 
-                    ? TextDecoration.lineThrough 
+                decoration: isComplete == true
+                    ? TextDecoration.lineThrough
                     : null,
               ),
             ),
