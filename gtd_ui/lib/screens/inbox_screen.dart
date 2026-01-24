@@ -13,6 +13,13 @@ import 'projects_screen.dart';
 import 'tags_screen.dart';
 import 'task_detail_screen.dart';
 import 'references_screen.dart';
+import 'next_actions_screen.dart';
+import 'waiting_for_screen.dart';
+import 'scheduled_screen.dart';
+import 'tickler_screen.dart';
+import 'someday_tasks_screen.dart';
+import 'someday_projects_screen.dart';
+import 'weekly_review_screen.dart';
 
 class InboxScreen extends StatefulWidget {
   final int userId;
@@ -240,6 +247,7 @@ class _InboxScreenState extends State<InboxScreen> {
               ],
             ),
           ),
+          // GTD Views
           ListTile(
             leading: const Icon(Icons.inbox),
             title: const Text('Inbox'),
@@ -251,6 +259,93 @@ class _InboxScreenState extends State<InboxScreen> {
               Navigator.pop(context); // Close drawer
             },
           ),
+          ListTile(
+            leading: const Icon(Icons.play_arrow),
+            title: const Text('Next Actions'),
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => NextActionsScreen(userId: widget.userId),
+                ),
+              );
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.hourglass_bottom),
+            title: const Text('Waiting For'),
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => WaitingForScreen(userId: widget.userId),
+                ),
+              );
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.calendar_today),
+            title: const Text('Scheduled'),
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => ScheduledScreen(userId: widget.userId),
+                ),
+              );
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.alarm),
+            title: const Text('Tickler'),
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => TicklerScreen(userId: widget.userId),
+                ),
+              );
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.cloud_queue),
+            title: const Text('Someday/Maybe Tasks'),
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => SomedayTasksScreen(userId: widget.userId),
+                ),
+              );
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.folder_off),
+            title: const Text('Someday/Maybe Projects'),
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => SomedayProjectsScreen(userId: widget.userId),
+                ),
+              );
+            },
+          ),
+          const Divider(),
+          ListTile(
+            leading: const Icon(Icons.fact_check),
+            title: const Text('Weekly Review'),
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) => WeeklyReviewScreen(userId: widget.userId),
+                ),
+              );
+            },
+          ),
+          const Divider(),
+          // Organization
           ListTile(
             leading: const Icon(Icons.place),
             title: const Text('Contexts'),
@@ -275,7 +370,6 @@ class _InboxScreenState extends State<InboxScreen> {
               );
             },
           ),
-          const Divider(),
           ListTile(
             leading: const Icon(Icons.folder_outlined),
             title: const Text('Projects'),
